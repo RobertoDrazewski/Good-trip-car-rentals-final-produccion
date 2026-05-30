@@ -1,0 +1,12 @@
+/* /client/src/index.css */
+@import "tailwindcss";
+
+/* 🌟 Capa de Utilidades Personalizadas (Compatible con la nueva arquitectura de Tailwind) */
+@utility scrollbar-none {
+  -ms-overflow-style: none;  /* IE y Edge */
+  scrollbar-width: none;     /* Firefox */
+  
+  &::-webkit-scrollbar {
+    display: none;           /* Chrome, Safari y Opera */
+  }
+}
