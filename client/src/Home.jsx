@@ -13,6 +13,7 @@ import WeatherWidget from './WeatherWidget';
 import ChatIA from './ChatIA';
 import Footer from './Footer';
 import { Loader2 } from 'lucide-react';
+import heroBg from './assets/hero.PNG';
 
 export default function Home() {
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -83,7 +84,16 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[#121319] text-white font-sans overflow-x-hidden selection:bg-[#88BDF2] selection:text-[#121319]">
+    <div
+      className="min-h-screen bg-[#121319] text-white font-sans overflow-x-hidden selection:bg-[#88BDF2] selection:text-[#121319]"
+      style={{
+        backgroundImage: `linear-gradient(rgba(18,19,25,0.65), rgba(18,19,25,0.65)), url(${heroBg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
       <NavBar/>
       <Hero/>
 
