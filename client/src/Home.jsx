@@ -13,7 +13,7 @@ import WeatherWidget from './WeatherWidget';
 import ChatIA from './ChatIA';
 import Footer from './Footer';
 import { Loader2 } from 'lucide-react';
-import heroBg from './assets/hero.PNG';
+import heroBg from './assets/hero.png';
 
 export default function Home() {
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
