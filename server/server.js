@@ -95,6 +95,27 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/banners', bannerRoutes);
 app.use('/api/clima', weatherRoutes); 
 
+// 🧠 ASISTENTE DE MARKETING IA (CORRECCIÓN 404 frontend)
+app.post('/api/ai-marketing-suggestion', (req, res) => {
+  try {
+    const { resumen } = req.body; // Aquí llega la string armada por el front con las métricas del período[cite: 4]
+    
+    // NOTA: Cuando desees conectar con la API real de OpenAI o Gemini, 
+    // usarás aquí las variables de entorno de tu archivo .env.
+    
+    const respuestaSugerencia = `📊 **Análisis Estratégico Good Trip**
+    
+    • **Optimización de Flota:** El modelo más solicitado está concentrando la mayor parte de tu demanda. Asegura inspecciones preventivas rigurosas en taller para evitar lucros cesantes.
+    • **Estrategia Comercial:** Si detectas un crecimiento negativo respecto al mes previo, implementa campañas de retargeting enfocadas en el turismo receptivo de aeropuertos.
+    • **Recomendación de Tarifas:** Durante los meses pico detectados, evalúa incrementar la tarifa diaria en un 5% de manera escalonada en el segmento de cajas automáticas.`;
+
+    return res.json({ suggestion: respuestaSugerencia });
+  } catch (error) {
+    console.error("❌ Error en asistente de marketing:", error.message);
+    return res.status(500).json({ error: "No se pudo procesar el análisis de marketing en este momento." });
+  }
+});
+
 // =================================================================
 // 7. RUTA DE CONTROL DE SALUD (Health Check)
 // =================================================================

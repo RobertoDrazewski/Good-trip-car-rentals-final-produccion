@@ -65,7 +65,7 @@ function PanelTorta({ titulo, icon, data, vacioTxt }) {
       </h3>
       {data.length > 0 ? (
         <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <PieChart>
               <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%"
                 innerRadius={50} outerRadius={85} paddingAngle={3} animationDuration={700}>
@@ -101,10 +101,26 @@ export default function TabMetricas({ reservas = [] }) {
     [reservas]
   );
 
+  // Generación dinámica de la lista de años (Pasado desde DB + 2025 + Presente + 50 años al futuro)
   const aniosDisponibles = useMemo(() => {
-    const s = new Set([String(anioActual)]);
-    confirmadas.forEach(r => { const ym = getYM(r); if (ym) s.add(ym.y); });
-    return [...s].sort();
+    const conjuntoAnios = new Set();
+    
+    // 1. Agregar cualquier año de reservas existentes en la base de datos (Historial hacia atrás)
+    confirmadas.forEach(r => { 
+      const ym = getYM(r); 
+      if (ym) conjuntoAnios.add(String(ym.y)); 
+    });
+    
+    // 2. Forzar la inclusión del año 2025
+    conjuntoAnios.add("2025");
+    
+    // 3. Agregar el año actual y extender el catálogo 50 años hacia el futuro
+    for (let i = 0; i <= 50; i++) {
+      conjuntoAnios.add(String(anioActual + i));
+    }
+    
+    // 4. Ordenar numéricamente para evitar desajustes en el combobox
+    return [...conjuntoAnios].sort((a, b) => Number(a) - Number(b));
   }, [confirmadas, anioActual]);
 
   // confirmadas del año seleccionado
@@ -254,7 +270,7 @@ export default function TabMetricas({ reservas = [] }) {
     } catch {
       const tips = [];
       if (crecimiento < 0) tips.push(`📉 Las reservas bajaron ${Math.abs(crecimiento)} unidades respecto al mes anterior. Activá descuentos anticipados o publicidad en redes para revertirlo.`);
-      if (autosData.length > 0) tips.push(`🏆 El auto más solicitado es ${autosData[0].name}. Mantenelo siempre disponible y bien cuidado — es tu producto estrella.`);
+      if (autosData.length > 0) tips.push(`🏆 El auto más solicitado is ${autosData[0].name}. Mantenelo siempre disponible y bien cuidado — es tu producto estrella.`);
       if (internacionalData.length > 0) tips.push(`🌎 Tenés clientes de ${internacionalData[0].name}. Considerá Google Ads segmentado a ese país y atención en su idioma.`);
       if (nacionalData.length > 0 && nacionalData[0].name !== 'Mendoza' && nacionalData[0].name !== 'Sin provincia') tips.push(`📍 Muchos clientes vienen de ${nacionalData[0].name}. Publicaciones geolocalizadas en esa provincia pueden traerte más reservas.`);
       tips.push(`⭐ Pedile a tus clientes satisfechos una reseña de Google. El 70% de búsquedas de autos en Mendoza terminan en Google Maps.`);
@@ -305,21 +321,24 @@ export default function TabMetricas({ reservas = [] }) {
         <h3 className="text-sm font-black uppercase text-white tracking-widest mb-6 flex items-center gap-2">
           <BarChart2 size={16} className="text-[#88BDF2]" /> Reservas e Ingresos por Mes · {filtroAnio}
         </h3>
-        <div className="h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={monthlyData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1f2733" vertical={false} />
-              <XAxis dataKey="mes" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={{ stroke: '#1f2733' }} />
-              <YAxis yAxisId="left" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fill: '#94a3b8', fontSize: 10 }}
-                axisLine={false} tickLine={false} tickFormatter={v => `$${Math.round(v / 1000)}K`} />
-              <Tooltip contentStyle={tipStyle} itemStyle={{ color: '#fff' }} cursor={{ fill: 'rgba(255,255,255,0.04)' }}
-                formatter={(value, name) => name === 'Ingresos ARS' ? [fmtARS(value), name] : [value, name]} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar yAxisId="left" dataKey="reservas" name="Reservas" fill="#88BDF2" radius={[6, 6, 0, 0]} animationDuration={800} />
-              <Line yAxisId="right" type="monotone" dataKey="ingresos" name="Ingresos ARS" stroke="#34d399" strokeWidth={2.5} dot={{ r: 3 }} animationDuration={800} />
-            </ComposedChart>
-          </ResponsiveContainer>
+        
+        <div className="w-full overflow-x-auto overflow-y-hidden pb-4">
+          <div className="h-72 min-w-[700px]">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+              <ComposedChart data={monthlyData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1f2733" vertical={false} />
+                <XAxis dataKey="mes" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={{ stroke: '#1f2733' }} />
+                <YAxis yAxisId="left" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fill: '#94a3b8', fontSize: 10 }}
+                  axisLine={false} tickLine={false} tickFormatter={v => `$${Math.round(v / 1000)}K`} />
+                <Tooltip contentStyle={tipStyle} itemStyle={{ color: '#fff' }} cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                  formatter={(value, name) => name === 'Ingresos ARS' ? [fmtARS(value), name] : [value, name]} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar yAxisId="left" dataKey="reservas" name="Reservas" fill="#88BDF2" radius={[6, 6, 0, 0]} animationDuration={800} />
+                <Line yAxisId="right" type="monotone" dataKey="ingresos" name="Ingresos ARS" stroke="#34d399" strokeWidth={2.5} dot={{ r: 3 }} animationDuration={800} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
@@ -346,7 +365,7 @@ export default function TabMetricas({ reservas = [] }) {
         </h3>
         {autosData.length > 0 ? (
           <div style={{ height: Math.max(autosData.length * 46, 120) }}>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <BarChart data={autosData} layout="vertical" margin={{ top: 0, right: 24, left: 10, bottom: 0 }}>
                 <XAxis type="number" hide allowDecimals={false} />
                 <YAxis type="category" dataKey="name" width={130} tick={{ fill: '#cbd5e1', fontSize: 11 }} axisLine={false} tickLine={false} />
