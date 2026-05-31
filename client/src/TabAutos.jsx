@@ -1,8 +1,7 @@
-// client/src/TabAutos.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import {
-  Car, Trash2, Loader2, Plus, X, AlertCircle,
+  Car, Trash2, Loader2, Plus, X, AlertCircle, Pencil, // 👈 Se agregó Pencil
   Snowflake, Bluetooth, Navigation, Armchair, Sun, ShieldCheck,
   Disc, Baby, Camera, Gauge, Settings2, Cog, Fuel, Droplet,
   Leaf, Mountain, SlidersHorizontal
@@ -14,12 +13,11 @@ export default function TabAutos() {
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [editingId, setEditingId] = useState(null); // 👈 Nuevo estado para controlar la edición
   
   const fileInputRef = useRef(null);
   const [imagePreview, setImagePreview] = useState(null);
 
-  // 🛠️ Estructura maestra de íconos agrupados por categorías.
-  // Cada item lleva su componente de ícono (Icon) de lucide-react.
   const CONFIG_CATEGORIAS = {
     confort: [
       { id: 'aire', label: 'Aire Acondicionado', Icon: Snowflake },
@@ -53,13 +51,14 @@ export default function TabAutos() {
     transmision: 'Manual',
     color: '#121319',
     descripcion_larga: '',
-    prices_ars: '', // 👈 CORREGIDO: Sincronizado con la columna real de tu base de datos y chatController
+    prices_ars: '',
     estado: 'Disponible',
     odometro: '',
     puntaje_confort: 5,
     puntaje_seguridad: 5,
     puntaje_ficha: 5,
-    iconos_seleccionados: {}
+    iconos_seleccionados: {},
+    imagen_url: '' // 👈 Necesario para preservar la imagen en la edición
   };
 
   const [newAuto, setNewAuto] = useState(estadoInicialAuto);
@@ -102,6 +101,31 @@ export default function TabAutos() {
     }
   };
 
+  // 👈 NUEVA FUNCIÓN: Carga los datos del auto en el formulario para editarlos
+  const handleEdit = (auto) => {
+    const features = auto.features || {};
+    setNewAuto({
+      modelo: auto.modelo || '',
+      patente: auto.patente || '',
+      transmision: auto.transmision || 'Manual',
+      color: auto.color || '#121319',
+      descripcion_larga: auto.descripcion_larga || '',
+      prices_ars: auto.prices_ars || '',
+      estado: auto.estado || 'Disponible',
+      odometro: auto.odometro || '',
+      puntaje_confort: features.puntaje_confort || 5,
+      puntaje_seguridad: features.puntaje_seguridad || 5,
+      puntaje_ficha: features.puntaje_ficha || 5,
+      iconos_seleccionados: features.iconos || {},
+      imagen_url: auto.imagen_url || ''
+    });
+    setImagePreview(auto.imagen_url || null);
+    setEditingId(auto.id);
+    setShowAddAuto(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' }); // Lleva la vista hacia el formulario
+  };
+
+  // 👈 FUNCIÓN MODIFICADA: Ahora maneja tanto la creación como la actualización
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
@@ -121,9 +145,13 @@ export default function TabAutos() {
       formData.append('transmision', newAuto.transmision);
       formData.append('color', newAuto.color);
       formData.append('descripcion_larga', newAuto.descripcion_larga);
-      formData.append('prices_ars', newAuto.prices_ars || 0); // 👈 Campo clave enviado mapeado correctamente
+      formData.append('prices_ars', newAuto.prices_ars || 0);
       formData.append('estado', newAuto.estado);
       formData.append('odometro', newAuto.odometro || 0);
+      
+      if (editingId && newAuto.imagen_url) {
+        formData.append('imagen_url', newAuto.imagen_url); // Envía la URL actual para no perder la foto si no se sube una nueva
+      }
 
       const paqueteFeatures = {
         puntaje_confort: parseInt(newAuto.puntaje_confort),
@@ -137,16 +165,30 @@ export default function TabAutos() {
         formData.append('imagen', fileInputRef.current.files[0]);
       }
 
-      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/cars`, formData, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      if (editingId) {
+        // Petición PUT para actualizar
+        await axios.put(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/cars/${editingId}`, formData, {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        alert("🚗 ¡Vehículo actualizado con éxito!");
+      } else {
+        // Petición POST para crear
+        await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/cars`, formData, {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        alert("🚗 ¡Vehículo creado y publicado con éxito!");
+      }
 
-      alert("🚗 ¡Vehículo creado y publicado con éxito!");
+      // Reinicio del formulario
       setNewAuto(estadoInicialAuto);
       setImagePreview(null);
+      setEditingId(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
       setShowAddAuto(false);
       fetchAutos();
@@ -176,6 +218,14 @@ export default function TabAutos() {
     }
   };
 
+  const handleCancelForm = () => {
+    setShowAddAuto(false);
+    setNewAuto(estadoInicialAuto);
+    setImagePreview(null);
+    setEditingId(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   return (
     <div className="w-full text-slate-100 p-4">
       <div className="flex justify-between items-center mb-6">
@@ -186,7 +236,7 @@ export default function TabAutos() {
           <p className="text-xs text-[#6F7D93] uppercase font-bold tracking-wider mt-0.5">Asignación de barras de rendimiento e íconos</p>
         </div>
         <button
-          onClick={() => setShowAddAuto(!showAddAuto)}
+          onClick={showAddAuto ? handleCancelForm : () => setShowAddAuto(true)}
           className="px-4 py-2.5 bg-[#88BDF2] text-[#121319] text-xs font-black uppercase tracking-wider rounded-xl hover:bg-white transition-all flex items-center gap-2 cursor-pointer"
         >
           {showAddAuto ? <X size={14} /> : <Plus size={14} />}
@@ -202,6 +252,12 @@ export default function TabAutos() {
 
       {showAddAuto && (
         <form onSubmit={handleSubmit} className="bg-[#1E222F] border border-slate-800 rounded-3xl p-6 mb-8 max-w-4xl mx-auto text-left">
+          
+          {/* Título dinámico para el formulario */}
+          <h3 className="text-sm font-black uppercase text-[#88BDF2] tracking-widest mb-6 pb-2 border-b border-slate-800">
+            {editingId ? 'Editar Vehículo Existente' : 'Nuevo Vehículo'}
+          </h3>
+
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="md:col-span-2">
               <label className="text-[10px] uppercase font-black text-[#6F7D93] tracking-wider block mb-2">Modelo / Marca del Vehículo</label>
@@ -243,7 +299,6 @@ export default function TabAutos() {
             <textarea rows="2" className="w-full bg-[#121319] border border-slate-800 rounded-xl p-3 text-xs text-white outline-none focus:border-[#88BDF2]" value={newAuto.descripcion_larga} onChange={e => setNewAuto({...newAuto, descripcion_larga: e.target.value})} placeholder="Escribe detalles del equipamiento del vehículo..."></textarea>
           </div>
 
-          {/* 📊 SECCIÓN DE BARRAS DE PROGRESO */}
           <div className="bg-[#121319] p-4 rounded-2xl border border-slate-800/60 mb-6">
             <h4 className="text-xs font-black uppercase text-[#88BDF2] tracking-widest mb-4">Métricas de Rendimiento (Barras de Nivel 1 a 10)</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -271,7 +326,6 @@ export default function TabAutos() {
             </div>
           </div>
 
-          {/* 🛠️ ASIGNADOR DE ÍCONOS AGRUPADOS POR SECCIÓN */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div className="bg-[#121319]/50 p-4 rounded-2xl border border-slate-800/40">
               <h5 className="text-[10px] uppercase font-black text-[#88BDF2] tracking-wider mb-3 border-b border-slate-800 pb-1.5">Íconos de Confort</h5>
@@ -322,10 +376,9 @@ export default function TabAutos() {
             </div>
           </div>
 
-          {/* Carga de Imagen */}
           <div className="flex flex-col md:flex-row items-center gap-6 p-4 bg-[#121319]/40 rounded-2xl border border-slate-800/60">
             <div className="flex-1 w-full">
-              <label className="text-[10px] uppercase font-black text-[#6F7D93] tracking-wider block mb-2">Fotografía del Vehículo</label>
+              <label className="text-[10px] uppercase font-black text-[#6F7D93] tracking-wider block mb-2">Fotografía del Vehículo (Opcional si es edición)</label>
               <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:uppercase file:bg-slate-800 file:text-white hover:file:bg-slate-700 cursor-pointer" />
             </div>
             {imagePreview && (
@@ -336,7 +389,7 @@ export default function TabAutos() {
           </div>
 
           <button type="submit" disabled={isSaving} className="w-full mt-6 bg-[#88BDF2] text-[#121319] font-black uppercase text-xs tracking-widest py-3.5 rounded-xl hover:bg-white transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50">
-            {isSaving ? <Loader2 className="animate-spin" size={16} /> : 'Guardar y Publicar Automóvil'}
+            {isSaving ? <Loader2 className="animate-spin" size={16} /> : (editingId ? 'Guardar Cambios' : 'Guardar y Publicar Automóvil')}
           </button>
         </form>
       )}
@@ -354,9 +407,26 @@ export default function TabAutos() {
               <p className="text-center text-emerald-400 font-mono text-xs font-bold mb-3">
                 ${a.prices_ars ? parseInt(a.prices_ars).toLocaleString('es-AR') : '0'} / día
               </p>
+              
+              {/* 👈 AQUÍ SE MODIFICARON LOS BOTONES: Añadí el de Editar (Pencil) */}
               <div className="flex justify-between items-center bg-[#121319] p-2 rounded-xl border border-slate-800/40">
                 <span className="text-[9px] font-mono font-bold px-2 text-slate-400">{a.patente || 'SIN PATENTE'}</span>
-                <button onClick={() => handleDelete(a.id)} className="p-1.5 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"><Trash2 size={14} /></button>
+                <div className="flex items-center gap-1">
+                  <button 
+                    onClick={() => handleEdit(a)} 
+                    className="p-1.5 text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors cursor-pointer"
+                    title="Editar Vehículo"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(a.id)} 
+                    className="p-1.5 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                    title="Eliminar Vehículo"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             </div>
           )) : (
