@@ -18,7 +18,7 @@ const getAllVentas = async (req, res) => {
         r.fecha_inicio, r.hora_inicio, r.fecha_fin, r.hora_fin,
         r.lugar_retiro, r.lugar_devolucion,
         r.monto_total_ars, r.tasa_dolar_usada, r.garantia_usd,
-        r.sillita, r.metodo_pago, r.origen, r.estado,
+        r.sillita, r.metodo_pago, r.origen, r.provincia, r.estado,
         LOWER(COALESCE(r.estado_reserva, 'pendiente')) AS estado_reserva,
         c.modelo, c.patente, c.imagen_url
       FROM reservas r

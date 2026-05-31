@@ -1,7 +1,12 @@
 // client/src/CarGrid.jsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Loader2, Star, Car, Check, Shield, Wrench, Sparkles } from 'lucide-react';
+import {
+  Loader2, Star, Car, Check, Shield, Wrench, Sparkles,
+  Snowflake, Bluetooth, Navigation, Armchair, Sun, ShieldCheck,
+  Disc, Baby, Camera, Gauge, Settings2, Cog, Fuel, Droplet,
+  Leaf, Mountain, SlidersHorizontal
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -17,6 +22,15 @@ export default function CarGrid() {
     airbag: 'Airbags', abs: 'Frenos ABS', isofix: 'ISOFIX', camara: 'Cámara Trasera', control_traccion: 'ESP / Estabilidad',
     caja_manual: 'Manual', caja_auto: 'Automático', motor_nafta: 'Nafta', motor_diesel: 'Diesel', motor_hibrido: 'Híbrido/Elec',
     traccion_4x4: '4x4 / 4WD', tipo_sedan: 'Sedán', perfil_manejo: 'Modos Manejo'
+  };
+
+  // Cada clave de equipamiento apunta a su ícono de lucide-react.
+  // Si una clave no está acá, se usa <Check> como respaldo.
+  const MAPA_ICONOS_LUCIDE = {
+    aire: Snowflake, bluetooth: Bluetooth, pantalla: Navigation, asientos_cuero: Armchair, techo: Sun,
+    airbag: ShieldCheck, abs: Disc, isofix: Baby, camara: Camera, control_traccion: Gauge,
+    caja_manual: Settings2, caja_auto: Cog, motor_nafta: Fuel, motor_diesel: Droplet, motor_hibrido: Leaf,
+    traccion_4x4: Mountain, tipo_sedan: Car, perfil_manejo: SlidersHorizontal
   };
 
   useEffect(() => {
@@ -157,12 +171,15 @@ export default function CarGrid() {
                     <div className="mt-4">
                       <span className="text-[8px] uppercase font-black text-[#6F7D93] tracking-widest block mb-2">Equipamiento Activo:</span>
                       <div className="flex flex-wrap gap-1.5">
-                        {listaIconosClasificados.map((key) => (
-                          <span key={key} className="bg-white/5 border border-slate-800 text-[9px] font-black uppercase text-slate-300 px-2 py-1 rounded-lg flex items-center gap-1">
-                            <Check size={10} className="text-[#88BDF2]" />
-                            {MAPA_ICONOS[key] || key}
-                          </span>
-                        ))}
+                        {listaIconosClasificados.map((key) => {
+                          const IconoEquip = MAPA_ICONOS_LUCIDE[key] || Check;
+                          return (
+                            <span key={key} className="bg-white/5 border border-slate-800 text-[9px] font-black uppercase text-slate-300 px-2 py-1 rounded-lg flex items-center gap-1">
+                              <IconoEquip size={10} className="text-[#88BDF2]" />
+                              {MAPA_ICONOS[key] || key}
+                            </span>
+                          );
+                        })}
                       </div>
                     </div>
                   ) : null}

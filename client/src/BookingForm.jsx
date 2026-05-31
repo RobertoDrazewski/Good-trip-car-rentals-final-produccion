@@ -1,6 +1,6 @@
-// client/src/BookingForm.jsx — v3 FINAL
+// client/src/BookingForm.jsx — v4
 import React, { useState, useEffect } from 'react';
-import { Baby, Loader2, Car, Info, AlertTriangle, MessageCircle, Globe, Calendar } from 'lucide-react';
+import { Baby, Loader2, Car, Info, AlertTriangle, MessageCircle, Globe, Calendar, Cog } from 'lucide-react';
 
 const PAISES = [
   "Argentina","Chile","Brasil","Uruguay","Bolivia","Paraguay","Perú",
@@ -38,6 +38,21 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuote
 
   const set = e => { const {name,value}=e.target; setForm(p=>({...p,[name]:value})); };
 
+  // País: si no es Argentina, la provincia no aplica (se limpia)
+  const setOrigen = e => {
+    const value = e.target.value;
+    setForm(p => ({ ...p, origen: value, provincia: value === 'Argentina' ? (p.provincia || 'Mendoza') : '' }));
+  };
+
+  // Al cambiar la fecha de retiro, encadenamos la devolución (nunca antes del retiro)
+  const onChangeDesde = e => {
+    const v = e.target.value;
+    setForm(p => ({ ...p, desde: v, hasta: (!p.hasta || p.hasta < v) ? v : p.hasta }));
+  };
+
+  // Abrir el calendario nativo al hacer clic en cualquier parte del campo
+  const abrirCalendario = e => { try { e.currentTarget.showPicker(); } catch (_) {} };
+
   // Verificar disponibilidad al cambiar auto o fechas
   useEffect(() => {
     if (!form.auto_id||!form.desde||!form.hasta) { setOcupado(null); return; }
@@ -58,7 +73,7 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuote
 
   const handleSubmit = async e => {
     e.preventDefault();
-    if (ocupado) return;
+    if (ocupado || !form.auto_id) return;
     setLoading(true);
     try {
       const aid = parseInt(form.auto_id,10);
@@ -104,6 +119,8 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuote
         cotizacion, tasa_dolar_usada:cotizacion,
         esMendoza:esMendoza(form.cliente_whatsapp),
         ...form,
+        // La provincia SOLO aplica a clientes de Argentina; del extranjero va null
+        provincia: form.origen === 'Argentina' ? (form.provincia || null) : null,
       });
     } catch(err) {
       console.error(err);
@@ -113,6 +130,8 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuote
 
   const inp='w-full bg-[#121319] border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-[#88BDF2] outline-none text-white';
   const lbl='text-[10px] uppercase text-slate-400 font-bold ml-1 mb-1 block';
+
+  const disponibles = autos.filter(a=>a.estado==='Disponible');
 
   return (
     <div className="w-full max-w-4xl mx-auto bg-[#1E222F] border border-slate-800 rounded-[2rem] p-8 shadow-2xl font-sans text-white">
@@ -131,8 +150,8 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuote
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className={lbl}><Globe size={10} className="inline mr-1"/>País</label>
-            <select name="origen" value={form.origen} onChange={set} className={inp}>
+            <label className={lbl}><Globe size={10} className="inline mr-1"/>País de origen del cliente</label>
+            <select name="origen" value={form.origen} onChange={setOrigen} className={inp}>
               {PAISES.map(p=><option key={p} value={p}>{p}</option>)}
             </select>
           </div>
@@ -146,14 +165,44 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuote
           )}
         </div>
 
+        {/* SELECTOR DE VEHÍCULO CON MINIATURA */}
         <div>
           <label className={lbl}>Vehículo</label>
-          <select name="auto_id" required value={form.auto_id} onChange={set} className={inp}>
-            <option value="">Seleccionar Vehículo...</option>
-            {autos.filter(a=>a.estado==='Disponible').map(a=>(
-              <option key={a.id} value={a.id}>{a.modelo} | {a.patente} | {a.transmision}</option>
-            ))}
-          </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {disponibles.map(a => {
+              const selected = String(form.auto_id) === String(a.id);
+              return (
+                <button type="button" key={a.id}
+                  onClick={() => setForm(p => ({ ...p, auto_id: String(a.id) }))}
+                  className={`flex items-center gap-3 p-3 rounded-2xl border text-left transition-all ${selected ? 'border-[#88BDF2] bg-[#88BDF2]/10 ring-1 ring-[#88BDF2]/40' : 'border-slate-800 bg-[#121319] hover:border-slate-600'}`}>
+                  <div className="w-24 h-16 rounded-lg bg-[#1E222F] overflow-hidden flex items-center justify-center shrink-0 border border-slate-800/60">
+                    {a.imagen_url
+                      ? <img src={a.imagen_url} alt={a.modelo} className="object-contain w-full h-full p-1"/>
+                      : <Car size={26} className="text-slate-600"/>}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-black uppercase text-xs text-white truncate">{a.modelo}</p>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <span className="text-[9px] font-mono uppercase bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded">{a.patente}</span>
+                      <span className="text-[9px] font-bold uppercase text-slate-400 flex items-center gap-1">
+                        <Cog size={9}/> {a.transmision}
+                      </span>
+                    </div>
+                    <p className="text-[#88BDF2] font-black font-mono text-sm mt-1">
+                      ${parseInt(a.prices_ars||0).toLocaleString('es-AR')}
+                      <span className="text-[9px] text-slate-500 font-normal"> /día</span>
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          {disponibles.length === 0 && (
+            <p className="text-[11px] text-slate-500 mt-2 ml-1">No hay vehículos disponibles en este momento.</p>
+          )}
+          {disponibles.length > 0 && !form.auto_id && (
+            <p className="text-[10px] text-slate-500 mt-2 ml-1">Seleccioná un vehículo para cotizar.</p>
+          )}
         </div>
 
         {ocupado&&(
@@ -171,9 +220,9 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuote
         )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div><label className={lbl}>Retiro</label><input type="date" name="desde" min={HOY} required value={form.desde} onChange={set} className={inp}/></div>
+          <div><label className={lbl}>Retiro</label><input type="date" name="desde" min={HOY} required value={form.desde} onChange={onChangeDesde} onClick={abrirCalendario} className={`${inp} cursor-pointer`}/></div>
           <div><label className={lbl}>Hora Retiro</label><select name="hora_inicio" value={form.hora_inicio} onChange={set} className={inp}>{HORAS.map(h=><option key={h} value={h}>{h}</option>)}</select></div>
-          <div><label className={lbl}>Devolución</label><input type="date" name="hasta" min={form.desde} required value={form.hasta} onChange={set} className={inp}/></div>
+          <div><label className={lbl}>Devolución</label><input type="date" name="hasta" min={form.desde} required value={form.hasta} onChange={set} onClick={abrirCalendario} className={`${inp} cursor-pointer`}/></div>
           <div><label className={lbl}>Hora Devol.</label><select name="hora_fin" value={form.hora_fin} onChange={set} className={inp}>{HORAS.map(h=><option key={h} value={h}>{h}</option>)}</select></div>
         </div>
 
@@ -216,7 +265,7 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuote
           </div>
         </div>
 
-        <button type="submit" disabled={loading||!!ocupado}
+        <button type="submit" disabled={loading||!!ocupado||!form.auto_id}
           className="w-full bg-[#88BDF2] text-[#121319] font-black uppercase text-sm py-4 rounded-xl hover:bg-white transition-all disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed flex items-center justify-center gap-2">
           {loading?<Loader2 className="animate-spin" size={20}/>:'CALCULAR Y COTIZAR'}
         </button>

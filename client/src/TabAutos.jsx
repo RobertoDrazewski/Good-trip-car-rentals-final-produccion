@@ -1,7 +1,12 @@
 // client/src/TabAutos.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Car, Trash2, Loader2, Plus, X, AlertCircle } from 'lucide-react';
+import {
+  Car, Trash2, Loader2, Plus, X, AlertCircle,
+  Snowflake, Bluetooth, Navigation, Armchair, Sun, ShieldCheck,
+  Disc, Baby, Camera, Gauge, Settings2, Cog, Fuel, Droplet,
+  Leaf, Mountain, SlidersHorizontal
+} from 'lucide-react';
 
 export default function TabAutos() {
   const [autos, setAutos] = useState([]);
@@ -13,31 +18,32 @@ export default function TabAutos() {
   const fileInputRef = useRef(null);
   const [imagePreview, setImagePreview] = useState(null);
 
-  // 🛠️ Estructura maestra de íconos agrupados por categorías
+  // 🛠️ Estructura maestra de íconos agrupados por categorías.
+  // Cada item lleva su componente de ícono (Icon) de lucide-react.
   const CONFIG_CATEGORIAS = {
     confort: [
-      { id: 'aire', label: 'Aire Acondicionado' },
-      { id: 'bluetooth', label: 'Conexión Bluetooth' },
-      { id: 'pantalla', label: 'Pantalla Táctil / GPS' },
-      { id: 'asientos_cuero', label: 'Asientos de Cuero' },
-      { id: 'techo', label: 'Techo Corredizo' }
+      { id: 'aire', label: 'Aire Acondicionado', Icon: Snowflake },
+      { id: 'bluetooth', label: 'Conexión Bluetooth', Icon: Bluetooth },
+      { id: 'pantalla', label: 'Pantalla Táctil / GPS', Icon: Navigation },
+      { id: 'asientos_cuero', label: 'Asientos de Cuero', Icon: Armchair },
+      { id: 'techo', label: 'Techo Corredizo', Icon: Sun }
     ],
     seguridad: [
-      { id: 'airbag', label: 'Airbags Seguros' },
-      { id: 'abs', label: 'Frenos ABS' },
-      { id: 'isofix', label: 'Anclajes ISOFIX' },
-      { id: 'camara', label: 'Cámara de Retroceso' },
-      { id: 'control_traccion', label: 'Control de Estabilidad (ESP)' }
+      { id: 'airbag', label: 'Airbags Seguros', Icon: ShieldCheck },
+      { id: 'abs', label: 'Frenos ABS', Icon: Disc },
+      { id: 'isofix', label: 'Anclajes ISOFIX', Icon: Baby },
+      { id: 'camara', label: 'Cámara de Retroceso', Icon: Camera },
+      { id: 'control_traccion', label: 'Control de Estabilidad (ESP)', Icon: Gauge }
     ],
     ficha: [
-      { id: 'caja_manual', label: 'Transmisión Manual' },
-      { id: 'caja_auto', label: 'Transmisión Automática' },
-      { id: 'motor_nafta', label: 'Motor Nafta' },
-      { id: 'motor_diesel', label: 'Motor Diesel' },
-      { id: 'motor_hibrido', label: 'Motor Híbrido / Eléctrico' },
-      { id: 'traccion_4x4', label: 'Tracción 4x4 / 4WD / AWD' },
-      { id: 'tipo_sedan', label: 'Carrocería Sedán' },
-      { id: 'perfil_manejo', label: 'Modos de Manejo (Sport/Eco)' }
+      { id: 'caja_manual', label: 'Transmisión Manual', Icon: Settings2 },
+      { id: 'caja_auto', label: 'Transmisión Automática', Icon: Cog },
+      { id: 'motor_nafta', label: 'Motor Nafta', Icon: Fuel },
+      { id: 'motor_diesel', label: 'Motor Diesel', Icon: Droplet },
+      { id: 'motor_hibrido', label: 'Motor Híbrido / Eléctrico', Icon: Leaf },
+      { id: 'traccion_4x4', label: 'Tracción 4x4 / 4WD / AWD', Icon: Mountain },
+      { id: 'tipo_sedan', label: 'Carrocería Sedán', Icon: Car },
+      { id: 'perfil_manejo', label: 'Modos de Manejo (Sport/Eco)', Icon: SlidersHorizontal }
     ]
   };
 
@@ -270,36 +276,48 @@ export default function TabAutos() {
             <div className="bg-[#121319]/50 p-4 rounded-2xl border border-slate-800/40">
               <h5 className="text-[10px] uppercase font-black text-[#88BDF2] tracking-wider mb-3 border-b border-slate-800 pb-1.5">Íconos de Confort</h5>
               <div className="space-y-2">
-                {CONFIG_CATEGORIAS.confort.map(icon => (
-                  <label key={icon.id} className="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer select-none">
-                    <input type="checkbox" className="accent-[#88BDF2]" checked={!!newAuto.iconos_seleccionados[icon.id]} onChange={() => handleToggleIcono(icon.id)} />
-                    <span>{icon.label}</span>
-                  </label>
-                ))}
+                {CONFIG_CATEGORIAS.confort.map(item => {
+                  const ItemIcon = item.Icon;
+                  return (
+                    <label key={item.id} className="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer select-none">
+                      <input type="checkbox" className="accent-[#88BDF2]" checked={!!newAuto.iconos_seleccionados[item.id]} onChange={() => handleToggleIcono(item.id)} />
+                      <ItemIcon size={14} className="text-[#88BDF2] shrink-0" />
+                      <span>{item.label}</span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
 
             <div className="bg-[#121319]/50 p-4 rounded-2xl border border-slate-800/40">
               <h5 className="text-[10px] uppercase font-black text-emerald-400 tracking-wider mb-3 border-b border-slate-800 pb-1.5">Íconos de Seguridad</h5>
               <div className="space-y-2">
-                {CONFIG_CATEGORIAS.seguridad.map(icon => (
-                  <label key={icon.id} className="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer select-none">
-                    <input type="checkbox" className="accent-emerald-400" checked={!!newAuto.iconos_seleccionados[icon.id]} onChange={() => handleToggleIcono(icon.id)} />
-                    <span>{icon.label}</span>
-                  </label>
-                ))}
+                {CONFIG_CATEGORIAS.seguridad.map(item => {
+                  const ItemIcon = item.Icon;
+                  return (
+                    <label key={item.id} className="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer select-none">
+                      <input type="checkbox" className="accent-emerald-400" checked={!!newAuto.iconos_seleccionados[item.id]} onChange={() => handleToggleIcono(item.id)} />
+                      <ItemIcon size={14} className="text-emerald-400 shrink-0" />
+                      <span>{item.label}</span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
 
             <div className="bg-[#121319]/50 p-4 rounded-2xl border border-slate-800/40">
               <h5 className="text-[10px] uppercase font-black text-amber-400 tracking-wider mb-3 border-b border-slate-800 pb-1.5">Íconos de Ficha Técnica</h5>
               <div className="space-y-2">
-                {CONFIG_CATEGORIAS.ficha.map(icon => (
-                  <label key={icon.id} className="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer select-none">
-                    <input type="checkbox" className="accent-amber-400" checked={!!newAuto.iconos_seleccionados[icon.id]} onChange={() => handleToggleIcono(icon.id)} />
-                    <span>{icon.label}</span>
-                  </label>
-                ))}
+                {CONFIG_CATEGORIAS.ficha.map(item => {
+                  const ItemIcon = item.Icon;
+                  return (
+                    <label key={item.id} className="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer select-none">
+                      <input type="checkbox" className="accent-amber-400" checked={!!newAuto.iconos_seleccionados[item.id]} onChange={() => handleToggleIcono(item.id)} />
+                      <ItemIcon size={14} className="text-amber-400 shrink-0" />
+                      <span>{item.label}</span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
           </div>

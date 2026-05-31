@@ -7,6 +7,11 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+// Años generados en vivo: desde el año actual hasta +50.
+// Se recalcula con new Date() cada vez, así nunca queda viejo.
+const ANIO_ACTUAL = new Date().getFullYear();
+const ANIOS = Array.from({ length: 51 }, (_, i) => ANIO_ACTUAL + i);
+
 const EditableValue = ({ label, value, onSave, icon }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [val, setVal] = useState(value);
@@ -52,7 +57,7 @@ const GLOBAL_VACIO = {
 
 export default function TabTarifas() {
   const [selectedMes, setSelectedMes] = useState(new Date().getMonth() + 1);
-  const [selectedAnio, setSelectedAnio] = useState(2026);
+  const [selectedAnio, setSelectedAnio] = useState(ANIO_ACTUAL);
   const [autos, setAutos] = useState([]);
   const [precios, setPrecios] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -157,8 +162,7 @@ export default function TabTarifas() {
             {mesesNom.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
           </select>
           <select value={selectedAnio} onChange={e => setSelectedAnio(Number(e.target.value))} className="bg-[#121319] text-white border border-slate-700 rounded-xl px-4 py-2 font-bold outline-none">
-            <option value={2026}>2026</option>
-            <option value={2027}>2027</option>
+            {ANIOS.map(y => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
       </div>

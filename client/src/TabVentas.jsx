@@ -1,8 +1,13 @@
 // client/src/TabVentas.jsx
 import React, { useState, useMemo } from 'react';
-import { FileText, MessageCircle, Trash2, Filter, AlertTriangle } from 'lucide-react';
+import { FileText, MessageCircle, Trash2, Filter, AlertTriangle, Globe, MapPin, Calendar } from 'lucide-react';
 
 const MESES_OPTS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+// Años generados en vivo: desde 2024 hasta el año actual + 50.
+// Al calcularse con new Date(), nunca queda desactualizado.
+const ANIO_ACTUAL = new Date().getFullYear();
+const ANIOS = Array.from({ length: (ANIO_ACTUAL + 50) - 2024 + 1 }, (_, i) => 2024 + i);
 
 export default function TabVentas({
   reservas = [],
@@ -40,6 +45,8 @@ export default function TabVentas({
     if (e === 'cancelada'  || e === 'cancelado')  return 'bg-rose-500/20    text-rose-400    border-rose-500/40';
     return 'bg-amber-500/20 text-amber-400 border-amber-500/40';
   };
+
+  const esInternacional = (r) => r.origen && r.origen !== 'Argentina';
 
   // Imprimir ticket individual
   const handleImprimirTicket = (r) => {
@@ -124,9 +131,7 @@ export default function TabVentas({
           <select value={filtroAnio} onChange={e => setFiltroAnio(e.target.value)}
             className="bg-[#121319] border border-slate-700 text-slate-300 text-xs font-bold px-4 py-2.5 rounded-xl outline-none cursor-pointer">
             <option value="todos">Todos los Años</option>
-            <option value="2025">2025</option>
-            <option value="2026">2026</option>
-            <option value="2027">2027</option>
+            {ANIOS.map(y => <option key={y} value={String(y)}>{y}</option>)}
           </select>
           <select value={filtroEstado} onChange={e => setFiltroEstado(e.target.value)}
             className="bg-[#121319] border border-slate-700 text-slate-300 text-xs font-bold px-4 py-2.5 rounded-xl outline-none cursor-pointer uppercase">
@@ -138,112 +143,106 @@ export default function TabVentas({
         </div>
       </div>
 
-      {/* TABLA */}
-      <div className="bg-[#1E222F] border border-slate-800 rounded-2xl shadow-2xl overflow-hidden overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[1100px]">
-          <thead className="bg-[#121319] border-b border-slate-800 text-[10px] uppercase font-black tracking-widest text-slate-400">
-            <tr>
-              <th className="p-4">ID</th>
-              <th className="p-4">Cliente</th>
-              <th className="p-4">Vehículo</th>
-              <th className="p-4">Origen</th>
-              <th className="p-4">Fechas</th>
-              <th className="p-4 text-center">Días</th>
-              <th className="p-4">Monto</th>
-              <th className="p-4 text-center">Estado</th>
-              <th className="p-4 text-center">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="text-xs font-medium text-slate-300">
-            {reservasFiltradas.length > 0 ? reservasFiltradas.map(r => {
-              const dias = calcularDias(r.fecha_inicio, r.fecha_fin);
-              const mendoza = esMendoza(r.cliente_whatsapp);
-              return (
-                <tr key={r.id}
-                  className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors odd:bg-[#121319]/60 even:bg-[#1E222F]">
+      {/* GRILLA DE TARJETAS (sin scroll lateral) */}
+      {reservasFiltradas.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {reservasFiltradas.map(r => {
+            const dias = calcularDias(r.fecha_inicio, r.fecha_fin);
+            const mendoza = esMendoza(r.cliente_whatsapp);
+            const internacional = esInternacional(r);
+            return (
+              <div key={r.id}
+                className="bg-[#1E222F] border border-slate-800 rounded-2xl p-5 flex flex-col gap-4 shadow-xl hover:border-[#88BDF2]/30 transition-colors">
 
-                  <td className="p-4 font-mono font-black text-[#88BDF2]">#{r.id}</td>
+                {/* Cabecera: ID + estado */}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono font-black text-[#88BDF2] text-sm">#{r.id}</span>
+                  <select
+                    value={String(r.estado_reserva || r.estado || 'pendiente').toLowerCase()}
+                    onChange={e => cambiarEstadoReserva && cambiarEstadoReserva(r.id, e.target.value)}
+                    className={`text-[9px] font-black uppercase px-2 py-1 rounded-lg border outline-none cursor-pointer ${getBadge(r.estado_reserva || r.estado)}`}
+                  >
+                    <option value="pendiente">PENDIENTE</option>
+                    <option value="confirmada">CONFIRMADA</option>
+                    <option value="cancelada">CANCELADA</option>
+                  </select>
+                </div>
 
-                  <td className="p-4">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-white uppercase">{r.cliente_nombre}</span>
-                      <span className="flex items-center gap-1 text-emerald-400 text-[10px] font-bold">
-                        {mendoza && <AlertTriangle size={10} className="text-amber-400"/>}
-                        {r.cliente_whatsapp}
-                      </span>
-                      {mendoza && <span className="text-[9px] text-amber-400 font-bold">📍 Local Mendoza</span>}
-                    </div>
-                  </td>
+                {/* Cliente */}
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-black text-white uppercase text-sm leading-tight">{r.cliente_nombre}</span>
+                  <span className="flex items-center gap-1 text-emerald-400 text-[11px] font-bold">
+                    {mendoza && <AlertTriangle size={11} className="text-amber-400"/>}
+                    {r.cliente_whatsapp}
+                  </span>
+                  {mendoza && <span className="text-[9px] text-amber-400 font-bold">📍 Local Mendoza</span>}
+                </div>
 
-                  <td className="p-4 font-black uppercase text-slate-300 max-w-[140px]">
-                    <span className="truncate block">{r.modelo || 'Eliminado'}</span>
-                  </td>
+                {/* Vehículo + Origen */}
+                <div className="grid grid-cols-2 gap-3 bg-[#121319]/60 rounded-xl p-3 border border-slate-800/50">
+                  <div className="flex flex-col">
+                    <span className="text-[8px] uppercase font-black text-[#6F7D93] tracking-widest mb-0.5">Vehículo</span>
+                    <span className="font-black uppercase text-slate-200 text-xs truncate">{r.modelo || 'Eliminado'}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[8px] uppercase font-black text-[#6F7D93] tracking-widest mb-0.5">Origen</span>
+                    <span className="flex items-center gap-1 text-xs font-bold text-slate-200">
+                      {internacional
+                        ? <><Globe size={11} className="text-[#88BDF2]"/> {r.origen}</>
+                        : <><MapPin size={11} className="text-emerald-400"/> {r.provincia || 'Argentina'}</>}
+                    </span>
+                    {!internacional && r.provincia && <span className="text-[9px] text-slate-500">Argentina</span>}
+                  </div>
+                </div>
 
-                  <td className="p-4 text-[10px] text-slate-400">
-                    <span className="block">{r.origen || 'Argentina'}</span>
-                    {r.provincia && <span className="text-slate-500">{r.provincia}</span>}
-                  </td>
+                {/* Fechas + días */}
+                <div className="flex items-center justify-between text-[11px]">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="flex items-center gap-1 text-emerald-400"><Calendar size={11}/> {String(r.fecha_inicio||'').substring(0,10)}</span>
+                    <span className="flex items-center gap-1 text-rose-400"><Calendar size={11}/> {String(r.fecha_fin||'').substring(0,10)}</span>
+                  </div>
+                  <div className="text-center">
+                    <span className="block text-lg font-black text-white leading-none">{dias}</span>
+                    <span className="text-[8px] uppercase text-[#6F7D93] font-black tracking-wider">días</span>
+                  </div>
+                </div>
 
-                  <td className="p-4">
-                    <div className="flex flex-col text-[10px]">
-                      <span className="text-emerald-400">▶ {String(r.fecha_inicio||'').substring(0,10)}</span>
-                      <span className="text-rose-400">◀ {String(r.fecha_fin||'').substring(0,10)}</span>
-                    </div>
-                  </td>
+                {/* Monto + método */}
+                <div className="flex items-end justify-between pt-3 border-t border-slate-800/50">
+                  <div className="flex flex-col">
+                    <span className="font-black text-[#88BDF2] text-lg font-mono">
+                      ${parseFloat(r.monto_total_ars||0).toLocaleString('es-AR')}
+                    </span>
+                    <span className="text-[9px] text-slate-500 uppercase font-bold">
+                      {String(r.metodo_pago||'efectivo').replace(/_/g,' ')}
+                    </span>
+                  </div>
 
-                  <td className="p-4 text-center font-black">{dias}</td>
-
-                  <td className="p-4">
-                    <div className="flex flex-col">
-                      <span className="font-black text-[#88BDF2]">
-                        ${parseFloat(r.monto_total_ars||0).toLocaleString('es-AR')}
-                      </span>
-                      <span className="text-[9px] text-slate-500 uppercase">
-                        {String(r.metodo_pago||'efectivo').replace(/_/g,' ')}
-                      </span>
-                    </div>
-                  </td>
-
-                  <td className="p-4 text-center">
-                    <select
-                      value={String(r.estado_reserva || r.estado || 'pendiente').toLowerCase()}
-                      onChange={e => cambiarEstadoReserva && cambiarEstadoReserva(r.id, e.target.value)}
-                      className={`text-[9px] font-black uppercase px-2 py-1 rounded-lg border bg-[#1E222F] outline-none cursor-pointer ${getBadge(r.estado_reserva || r.estado)}`}
-                    >
-                      <option value="pendiente">PENDIENTE</option>
-                      <option value="confirmada">CONFIRMADA</option>
-                      <option value="cancelada">CANCELADA</option>
-                    </select>
-                  </td>
-
-                  <td className="p-4">
-                    <div className="flex gap-2 justify-center items-center">
-                      <button onClick={() => handleWhatsApp(r)}
-                        className="text-emerald-400 hover:scale-110 transition-transform" title="WhatsApp">
-                        <MessageCircle size={16}/>
-                      </button>
-                      <button onClick={() => handleImprimirTicket(r)}
-                        className="text-[#88BDF2] hover:scale-110 transition-transform" title="Imprimir Ticket">
-                        <FileText size={16}/>
-                      </button>
-                      <button onClick={() => eliminarReserva && eliminarReserva(r.id)}
-                        className="text-rose-500 hover:scale-110 transition-transform" title="Eliminar">
-                        <Trash2 size={16}/>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            }) : (
-              <tr>
-                <td colSpan="9" className="p-12 text-center font-black text-slate-600 tracking-widest uppercase">
-                  No hay reservas para los filtros seleccionados
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                  {/* ACCIONES siempre visibles */}
+                  <div className="flex gap-2 items-center">
+                    <button onClick={() => handleWhatsApp(r)}
+                      className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors" title="WhatsApp">
+                      <MessageCircle size={16}/>
+                    </button>
+                    <button onClick={() => handleImprimirTicket(r)}
+                      className="p-2 rounded-xl bg-[#88BDF2]/10 text-[#88BDF2] hover:bg-[#88BDF2]/20 transition-colors" title="Imprimir Ticket / PDF">
+                      <FileText size={16}/>
+                    </button>
+                    <button onClick={() => eliminarReserva && eliminarReserva(r.id)}
+                      className="p-2 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition-colors" title="Eliminar">
+                      <Trash2 size={16}/>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="bg-[#1E222F] border border-slate-800 rounded-2xl p-12 text-center font-black text-slate-600 tracking-widest uppercase">
+          No hay reservas para los filtros seleccionados
+        </div>
+      )}
     </div>
   );
 }
