@@ -1,3 +1,4 @@
+// client/src/WeatherWidget.jsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { MapPin, Wind, Loader2, Droplets, Calendar, Sunrise, Sunset, Clock, CloudRain } from 'lucide-react';
@@ -187,8 +188,8 @@ export default function WeatherWidget() {
   };
 
   if (loading) return (
-    <div className="flex justify-center py-10 w-full">
-      <Loader2 className="animate-spin text-sky-500" size={32} />
+    <div className="flex justify-center py-12 w-full bg-[#1E222F] border border-slate-800 rounded-[2rem] shadow-2xl">
+      <Loader2 className="animate-spin text-[#88BDF2]" size={32} />
     </div>
   );
 
@@ -198,113 +199,116 @@ export default function WeatherWidget() {
   const hoyForecast = data.forecast.forecastday[0];
 
   return (
-    <div className={`relative ${style.bg} ${style.text} p-4 sm:p-6 md:p-8 shadow-md border-y border-white/10 overflow-hidden w-full transition-all duration-1000 text-slate-800 animate-in fade-in duration-300`}>
+    // Corregidos bordes a rounded-[2rem], agregada sombra premium y removido text-slate-800 fijo que dañaba los colores dinámicos
+    <div className={`relative ${style.bg} ${style.text} p-6 md:p-8 rounded-[2rem] shadow-2xl border border-white/10 overflow-hidden w-full transition-all duration-1000 animate-in fade-in duration-300 font-sans`}>
       
       <div className={`absolute -top-24 -right-24 w-60 h-60 ${style.ambientTop} blur-[80px] rounded-full pointer-events-none transition-all duration-1000`} />
       <div className={`absolute -bottom-24 -left-24 w-60 h-60 ${style.ambientBottom} blur-[80px] rounded-full pointer-events-none transition-all duration-1000`} />
 
-      <div className="relative z-10 w-full flex flex-col gap-4">
+      <div className="relative z-10 w-full flex flex-col gap-5">
         
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 w-full border-b border-white/10 pb-3">
-          <div className="space-y-1.5 text-left w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full border-b border-white/10 pb-4">
+          <div className="space-y-2 text-left w-full sm:w-auto">
             
-            <div className="flex flex-wrap gap-1.5 items-center">
-              <div className={`flex items-center gap-1 ${style.badge} px-2.5 py-1 rounded-xl border`}>
-                <MapPin size={11} className="text-yellow-500 animate-pulse" />
-                <span className="font-black uppercase text-[8px] tracking-wider">Mendoza, AR</span>
+            <div className="flex flex-wrap gap-2 items-center">
+              <div className={`flex items-center gap-1.5 ${style.badge} px-3 py-1.5 rounded-xl border`}>
+                <MapPin size={13} className="text-yellow-500 animate-pulse" />
+                <span className="font-black uppercase text-xs tracking-wider">Mendoza, AR</span>
               </div>
               
-              <div className={`flex items-center gap-1.5 ${style.badge} px-2.5 py-1 rounded-xl border font-mono font-bold text-[8px]`}>
-                <Clock size={10} className="text-yellow-500" />
+              <div className={`flex items-center gap-2 ${style.badge} px-3 py-1.5 rounded-xl border font-mono font-bold text-xs`}>
+                <Clock size={12} className="text-yellow-500" />
                 <span>{localTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
                 <span className="opacity-40">•</span>
                 <span>{getSouthernSeason()}</span>
               </div>
             </div>
             
-            <h3 className="text-lg md:text-2xl font-black uppercase tracking-tighter leading-tight italic">
+            <h3 className="text-xl md:text-3xl font-black uppercase tracking-tight leading-tight italic">
               Pronóstico <span className={style.subtitle}>Semanal</span>
             </h3>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl flex items-center gap-3 border border-white/20 shadow-sm max-sm:w-full max-sm:justify-between">
-            <img src={data.current.condition.icon} alt="icon" className="w-12 h-12 md:w-14 md:h-14 drop-shadow-md flex-shrink-0" />
+          <div className="bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl flex items-center gap-4 border border-white/20 shadow-sm max-sm:w-full max-sm:justify-between">
+            <img src={data.current.condition.icon} alt="icon" className="w-14 h-14 md:w-16 md:h-16 drop-shadow-md flex-shrink-0" />
             <div className="text-left">
               <div className="flex items-start">
-                <p className="text-2xl md:text-3xl font-black tracking-tighter leading-none">{Math.round(data.current.temp_c)}</p>
-                <span className="text-[10px] font-black text-yellow-500 mt-0.5">°C</span>
+                <p className="text-3xl md:text-4xl font-black tracking-tighter leading-none">{Math.round(data.current.temp_c)}</p>
+                <span className="text-xs font-black text-yellow-500 mt-0.5">°C</span>
               </div>
-              <p className="text-[8px] font-black text-yellow-500 uppercase tracking-widest mt-0.5">{data.current.condition.text}</p>
+              <p className="text-xs font-black text-yellow-500 uppercase tracking-widest mt-1 whitespace-normal">{data.current.condition.text}</p>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 w-full text-left">
-          <div className="bg-white/5 backdrop-blur-sm p-2.5 rounded-xl border border-white/5 flex items-center gap-2">
-            <Sunrise className="text-yellow-500 flex-shrink-0" size={16} />
-            <div>
-              <p className="text-[7px] font-black uppercase tracking-wider opacity-40">Salida</p>
-              <p className="text-xs font-black italic">{hoyForecast.astro.sunrise}</p>
+        {/* Bloques de Datos Clave (Tipografías e íconos reajustados para amoldarse sin cortes) */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 w-full text-left">
+          <div className="bg-white/5 backdrop-blur-sm p-3.5 rounded-xl border border-white/5 flex items-center gap-3">
+            <Sunrise className="text-yellow-500 flex-shrink-0" size={20} />
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-wider opacity-50">Salida</p>
+              <p className="text-sm font-black italic truncate">{hoyForecast.astro.sunrise}</p>
             </div>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-sm p-2.5 rounded-xl border border-white/5 flex items-center gap-2">
-            <Sunset className="text-orange-500 flex-shrink-0" size={16} />
-            <div>
-              <p className="text-[7px] font-black uppercase tracking-wider opacity-40">Puesta</p>
-              <p className="text-xs font-black italic">{hoyForecast.astro.sunset}</p>
+          <div className="bg-white/5 backdrop-blur-sm p-3.5 rounded-xl border border-white/5 flex items-center gap-3">
+            <Sunset className="text-orange-500 flex-shrink-0" size={20} />
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-wider opacity-50">Puesta</p>
+              <p className="text-sm font-black italic truncate">{hoyForecast.astro.sunset}</p>
             </div>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-sm p-2.5 rounded-xl border border-white/5 flex items-center gap-2">
-            <CloudRain className="text-cyan-400 flex-shrink-0" size={16} />
-            <div>
-              <p className="text-[7px] font-black uppercase tracking-wider opacity-40">Prob. Lluvia</p>
-              <p className="text-xs font-black italic">{hoyForecast.day.daily_chance_of_rain}%</p>
+          <div className="bg-white/5 backdrop-blur-sm p-3.5 rounded-xl border border-white/5 flex items-center gap-3">
+            <CloudRain className="text-cyan-400 flex-shrink-0" size={20} />
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-wider opacity-50">Prob. Lluvia</p>
+              <p className="text-sm font-black italic truncate">{hoyForecast.day.daily_chance_of_rain}%</p>
             </div>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-sm p-2.5 rounded-xl border border-white/5 flex items-center gap-2">
-            <Wind className="text-teal-400 flex-shrink-0" size={16} />
-            <div>
-              <p className="text-[7px] font-black uppercase tracking-wider opacity-40">Viento</p>
-              <p className="text-xs font-black italic">{data.current.wind_kph} km/h</p>
+          <div className="bg-white/5 backdrop-blur-sm p-3.5 rounded-xl border border-white/5 flex items-center gap-3">
+            <Wind className="text-teal-400 flex-shrink-0" size={20} />
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-wider opacity-50">Viento</p>
+              <p className="text-sm font-black italic truncate">{data.current.wind_kph} km/h</p>
             </div>
           </div>
         </div>
 
         {/* PRONÓSTICO 7 DÍAS */}
-        <div className="flex overflow-x-auto pb-2 gap-2 snap-x snap-mandatory scrollbar-none md:grid md:grid-cols-7 md:pb-0 w-full">
+        <div className="flex overflow-x-auto pb-2 gap-2.5 snap-x snap-mandatory scrollbar-none md:grid md:grid-cols-7 md:pb-0 w-full">
           {data.forecast.forecastday.map((day, idx) => (
             <div 
               key={idx} 
-              className={`min-w-[85px] md:min-w-0 p-2.5 rounded-xl text-center border transition-all duration-300 snap-center flex-shrink-0 flex-1 ${
+              className={`min-w-[95px] md:min-w-0 p-3 rounded-2xl text-center border transition-all duration-300 snap-center flex-shrink-0 flex-1 ${
                 idx === 0 
                 ? 'bg-yellow-500 border-yellow-400 text-slate-950 shadow-sm' 
                 : 'bg-white/5 border-white/5 text-inherit'
               }`}
             >
-              <p className={`text-[8px] font-black uppercase mb-1 tracking-wider ${idx === 0 ? 'text-slate-900 font-black' : 'opacity-60'}`}>
+              <p className={`text-[10px] font-black uppercase mb-1 tracking-wider ${idx === 0 ? 'text-slate-900 font-black' : 'opacity-60'}`}>
                 {idx === 0 ? 'Hoy' : new Date(day.date + "T00:00:00").toLocaleDateString('es-AR', { weekday: 'short' })}
               </p>
-              <img src={day.day.condition.icon} alt="icon" className="w-7 h-7 mx-auto mb-1" />
-              <p className="text-sm font-black italic">{Math.round(day.day.maxtemp_c)}°</p>
-              <p className={`text-[7px] font-black uppercase ${idx === 0 ? 'text-slate-900 opacity-50' : 'text-sky-300'}`}>
+              <img src={day.day.condition.icon} alt="icon" className="w-8 h-8 mx-auto mb-1 drop-shadow" />
+              <p className="text-base font-black italic">{Math.round(day.day.maxtemp_c)}°</p>
+              <p className={`text-[9px] font-black uppercase ${idx === 0 ? 'text-slate-900 opacity-60' : 'text-sky-300'}`}>
                  Min {Math.round(day.day.mintemp_c)}°
               </p>
             </div>
           ))}
         </div>
 
-        <div className="pt-2.5 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-2 w-full text-[9px]">
-          <div className="flex items-center gap-1.5 opacity-80 max-sm:w-full max-sm:justify-center">
-            <Droplets size={12} className="text-yellow-500" />
+        {/* Footer del Widget */}
+        <div className="pt-3 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-3 w-full text-xs">
+          <div className="flex items-center gap-2 opacity-90 max-sm:w-full max-sm:justify-center">
+            <Droplets size={14} className="text-yellow-500" />
             <span className="font-black uppercase tracking-wider">Humedad: {data.current.humidity}%</span>
           </div>
           
-          <div className="bg-white/5 px-3 py-1.5 rounded-lg flex items-center gap-2 border border-white/5 w-full sm:w-auto justify-center backdrop-blur-sm">
-            <Calendar size={11} className="text-yellow-500 flex-shrink-0" />
-            <p className={`font-bold italic text-center leading-tight ${style.textInverted}`}>
+          <div className="bg-white/5 px-4 py-2 rounded-xl flex items-center gap-2.5 border border-white/5 w-full sm:w-auto justify-center backdrop-blur-sm">
+            <Calendar size={13} className="text-yellow-500 flex-shrink-0" />
+            <p className={`font-bold italic text-center leading-tight ${style.textInverted} whitespace-normal break-words`}>
               Planificá tus rutas turísticas con datos en tiempo real.
             </p>
           </div>
