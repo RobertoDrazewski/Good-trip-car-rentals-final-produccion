@@ -1,7 +1,7 @@
 // client/src/GoogleReviews.jsx
 import React from 'react';
 import { Star, Quote, ExternalLink } from 'lucide-react';
-import logoCuadrado from './assets/logocuadrado.png';
+import logoBlanco from './assets/logo.png';
 
 export default function GoogleReviews() {
   const reviews = [
@@ -36,7 +36,7 @@ export default function GoogleReviews() {
       <div className="flex flex-col sm:flex-row justify-between items-center gap-6 mb-8 border-b border-slate-800/60 pb-6">
         <div className="text-center sm:text-left">
           <h2 className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
-            Opiniones de <span className="text-[#88BDF2]">Clientes</span>
+            <span>Opiniones de</span>&nbsp;<span className="text-[#88BDF2]">Clientes</span>
           </h2>
           <p className="text-slate-400 text-[11px] mt-1 tracking-wide font-medium">
             La confianza de quienes ya recorrieron Mendoza.
@@ -45,7 +45,7 @@ export default function GoogleReviews() {
 
         {/* Badge de Google Rating optimizado para no desbordar */}
         <div className="flex items-center gap-3.5 bg-[#121319] border border-slate-800 p-3.5 rounded-2xl shrink-0 w-full sm:w-auto min-w-[240px]">
-          <img src={logoCuadrado} alt="Good Trip" className="h-10 w-10 rounded-xl object-cover shrink-0 border border-slate-800/40" />
+          <img src={logoBlanco} alt="Good Trip" className="h-28 w-auto object-contain shrink-0" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 text-amber-400">
               <span className="text-white font-black text-sm font-mono">4.9</span>

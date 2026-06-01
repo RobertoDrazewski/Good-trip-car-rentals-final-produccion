@@ -128,11 +128,12 @@ export default function Navbar() {
     }, 400);
   };
 
+  // Los href coinciden con los id reales de las <section> en Home.jsx
   const navLinks = [
     { href: '#flota', label: 'Flota' },
     { href: '#requisitos', label: 'Requisitos' },
-    { href: '#reservas', label: 'Reservas' },
-    { href: '#rutas', label: 'Rutas' },
+    { href: '#reserva-y-opiniones', label: 'Reservas' },
+    { href: '#guias-rutas', label: 'Rutas' },
   ];
 
   const otherLangs = LANGS.filter(l => l.code !== activeLang);

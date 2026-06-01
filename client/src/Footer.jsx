@@ -3,13 +3,12 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Phone } from 'lucide-react';
 
-// 🔌 Ruta plana corregida (ambos están en la carpeta raíz src/)
-import logoCuadrado from './assets/logocuadrado.png';
+// Mismo logo blanco que usamos en GoogleReviews
+import logoBlanco from './assets/logo.png';
 
 export default function Footer() {
   const navigate = useNavigate();
-  const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
-  
+
   const INSTAGRAM_URL = "https://www.instagram.com/goodtripcarrentals/";
   const WHATSAPP_NUMBER = "5492612764618";
   const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=Hola, Good Trip Mendoza.`;
@@ -17,8 +16,8 @@ export default function Footer() {
   return (
     <footer className="relative bg-[#121319]/90 backdrop-blur-md border-t border-slate-800/60 pt-12 pb-8 w-full text-white z-50">
       <div className="w-full max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-10 items-center text-[11px] font-bold">
-        
-        {/* IZQUIERDA: Copyright, Teléfono e Instagram (SVG Nativo anti-errores) */}
+
+        {/* IZQUIERDA: Copyright, Teléfono e Instagram */}
         <div className="flex flex-col items-center md:items-start gap-3 text-slate-300 uppercase tracking-wider text-center md:text-left">
           <p className="text-white">© Good Trip Car Rentals Mendoza</p>
           <div className="flex items-center gap-5">
@@ -35,22 +34,19 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* CENTRO: Solo el Logo y Créditos Puma Code */}
-        <div className="flex flex-col items-center gap-2">
-          <img src={logoCuadrado} alt="Good Trip Logo" className="h-20 w-auto opacity-90" />
+        {/* CENTRO: Logo blanco + créditos Puma Code */}
+        <div className="flex flex-col items-center gap-3">
+          <img src={logoBlanco} alt="Good Trip Logo" className="h-48 w-auto object-contain opacity-95" />
           <p className="text-[9px] uppercase tracking-widest text-[#666D7E] text-center">
             Powered by <a href="https://puma-code.com" className="text-[#88BDF2] hover:text-white transition-colors">Puma-Code.com</a><br/>
             Est. Mendoza 2026 • Copyright Puma Code
           </p>
         </div>
 
-        {/* DERECHA: Staff y Scroll */}
-        <div className="flex flex-col items-center md:items-end gap-3 text-slate-400">
-          <p className="text-[10px] uppercase text-center md:text-right max-w-[200px]">
-            Bienvenidos. Si eres del staff, haz clic acá para entrar al login
-          </p>
-          <button 
-            onClick={() => navigate('/login')} 
+        {/* DERECHA: Acceso Staff (minimalista) */}
+        <div className="flex justify-center md:justify-end">
+          <button
+            onClick={() => navigate('/login')}
             className="px-6 py-2 bg-[#1E222F] hover:bg-[#88BDF2] text-[#88BDF2] hover:text-[#121319] transition-all rounded-lg uppercase tracking-wider font-bold border border-slate-800"
           >
             Acceso Staff
