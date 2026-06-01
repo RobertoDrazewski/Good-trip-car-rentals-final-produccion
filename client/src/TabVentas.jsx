@@ -1,11 +1,14 @@
 // client/src/TabVentas.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import axios from 'axios';
 import { FileText, MessageCircle, Trash2, Filter, AlertTriangle, Globe, MapPin, Calendar } from 'lucide-react';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const LOGO_URL = 'https://res.cloudinary.com/damerwlrc/image/upload/v1780316649/logocuadrado_wgykmp.png';
 
 const MESES_OPTS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 // Años generados en vivo: desde 2024 hasta el año actual + 50.
-// Al calcularse con new Date(), nunca queda desactualizado.
 const ANIO_ACTUAL = new Date().getFullYear();
 const ANIOS = Array.from({ length: (ANIO_ACTUAL + 50) - 2024 + 1 }, (_, i) => 2024 + i);
 
@@ -17,6 +20,20 @@ export default function TabVentas({
   const [filtroMes,    setFiltroMes]    = useState('todos');
   const [filtroAnio,   setFiltroAnio]   = useState('todos');
   const [filtroEstado, setFiltroEstado] = useState('todas');
+  const [requisitos,   setRequisitos]   = useState([]);
+
+  // Cargamos los requisitos una vez para poder anexarlos al PDF del ticket
+  useEffect(() => {
+    const fetchReqs = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/api/admin/requisitos`);
+        setRequisitos(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error('No se pudieron cargar los requisitos para el ticket:', err);
+      }
+    };
+    fetchReqs();
+  }, []);
 
   const calcularDias = (inicio, fin) => {
     if (!inicio || !fin) return 1;
@@ -48,40 +65,88 @@ export default function TabVentas({
 
   const esInternacional = (r) => r.origen && r.origen !== 'Argentina';
 
-  // Imprimir ticket individual
+  // Imprimir ticket individual con logo, íconos y requisitos
   const handleImprimirTicket = (r) => {
     const dias = calcularDias(r.fecha_inicio, r.fecha_fin);
-    const w = window.open('', '_blank', 'width=700,height=900');
+    const esTarjeta = String(r.metodo_pago || '').includes('tarjeta');
+    const pagoEmoji = esTarjeta ? '💳' : '💵';
+    const origenEmoji = esInternacional(r) ? '🌎' : '📍';
+
+    // Bloque de requisitos (mismos que el componente Requirements)
+    const reqsHtml = requisitos.length ? `
+      <div class="reqs">
+        <h2>📋 Requisitos a tener en cuenta</h2>
+        ${requisitos.map(req => `
+          <div class="req">
+            <span class="req-ico">${req.icono || '📌'}</span>
+            <div class="req-body">
+              <div class="req-tit">${req.titulo || ''}</div>
+              <div class="req-desc">${req.descripcion || ''}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>` : '';
+
+    const w = window.open('', '_blank', 'width=720,height=950');
     w.document.write(`
       <html><head><title>Ticket Good Trip #${r.id}</title>
+      <meta charset="utf-8"/>
       <style>
-        body{font-family:monospace;background:#fff;color:#000;padding:32px;max-width:600px;margin:auto}
-        h1{font-size:22px;text-align:center}
-        .sub{text-align:center;color:#555;font-size:12px;margin-bottom:24px}
-        .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #ccc;font-size:13px}
-        .total{font-size:18px;font-weight:bold;display:flex;justify-content:space-between;margin-top:16px;padding-top:12px;border-top:2px solid #000}
-        .footer{margin-top:32px;font-size:10px;color:#888;text-align:center}
-        .badge{background:#000;color:#fff;display:inline-block;padding:2px 8px;font-size:11px;margin-bottom:8px}
+        body{font-family:Arial,Helvetica,sans-serif;background:#fff;color:#000;padding:28px;max-width:620px;margin:auto}
+        .logo{display:block;margin:0 auto 10px;width:110px;height:auto}
+        h1{font-size:22px;text-align:center;margin:6px 0}
+        .sub{text-align:center;color:#555;font-size:12px;margin-bottom:20px}
+        .badge{background:#000;color:#fff;display:inline-block;padding:3px 10px;font-size:11px;margin-bottom:10px;border-radius:4px}
+        .row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px dashed #ccc;font-size:13px;gap:12px}
+        .row .lbl{display:flex;align-items:center;gap:7px;color:#333}
+        .row .val{text-align:right;font-weight:600}
+        .total{font-size:18px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:12px;border-top:2px solid #000}
+        .reqs{margin-top:28px;border-top:2px dashed #999;padding-top:16px}
+        .reqs h2{font-size:14px;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+        .req{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px}
+        .req-ico{font-size:18px;line-height:1.2;flex-shrink:0}
+        .req-tit{font-size:12px;font-weight:bold;text-transform:uppercase}
+        .req-desc{font-size:11px;color:#555;line-height:1.4}
+        .footer{margin-top:28px;font-size:10px;color:#888;text-align:center}
+        /* Barra de acciones: visible en pantalla, oculta al imprimir */
+        .toolbar{display:flex;gap:12px;justify-content:center;margin-bottom:22px}
+        .toolbar button{font-size:13px;font-weight:bold;padding:10px 18px;border-radius:10px;border:none;cursor:pointer}
+        .btn-print{background:#88BDF2;color:#121319}
+        .btn-close{background:#eee;color:#333}
+        @media print{ .no-print{display:none !important} body{padding:0} }
       </style></head><body>
-      <h1>🚗 GOOD TRIP CARS</h1>
+
+      <div class="toolbar no-print">
+        <button class="btn-print" onclick="window.print()">⬇️ Descargar / Imprimir PDF</button>
+        <button class="btn-close" onclick="window.close()">✕ Cerrar</button>
+      </div>
+
+      <img class="logo" src="${LOGO_URL}" alt="Good Trip Cars"/>
+      <h1>GOOD TRIP CARS</h1>
       <div class="sub">Mendoza, Argentina · goodtripmendoza@gmail.com</div>
-      <div class="badge">RESERVA Nº ${r.id}</div>
-      <div class="row"><span>Cliente</span><span>${r.cliente_nombre || '-'}</span></div>
-      <div class="row"><span>WhatsApp</span><span>${r.cliente_whatsapp || '-'}</span></div>
-      <div class="row"><span>Vehículo</span><span>${r.modelo || 'Auto'}</span></div>
-      <div class="row"><span>Origen</span><span>${r.origen || 'Argentina'}${r.provincia ? ' · '+r.provincia : ''}</span></div>
-      <div class="row"><span>Retiro</span><span>${String(r.fecha_inicio||'').substring(0,10)} — ${r.lugar_retiro || '-'}</span></div>
-      <div class="row"><span>Devolución</span><span>${String(r.fecha_fin||'').substring(0,10)} — ${r.lugar_devolucion || '-'}</span></div>
-      <div class="row"><span>Días</span><span>${dias}</span></div>
-      <div class="row"><span>Método de Pago</span><span>${String(r.metodo_pago||'efectivo').replace('_',' ')}</span></div>
-      <div class="row"><span>Garantía</span><span>USD ${r.garantia_usd || 400}</span></div>
-      <div class="total"><span>TOTAL</span><span>ARS $${parseFloat(r.monto_total_ars||0).toLocaleString('es-AR')}</span></div>
-      <div class="row" style="margin-top:16px"><span>Estado</span><span>${r.estado_reserva || r.estado || 'pendiente'}</span></div>
+
+      <div style="text-align:center"><span class="badge">RESERVA Nº ${r.id}</span></div>
+
+      <div class="row"><span class="lbl">🧑 Cliente</span><span class="val">${r.cliente_nombre || '-'}</span></div>
+      <div class="row"><span class="lbl">👤 WhatsApp</span><span class="val">${r.cliente_whatsapp || '-'}</span></div>
+      <div class="row"><span class="lbl">🚗 Vehículo</span><span class="val">${r.modelo || 'Auto'}</span></div>
+      <div class="row"><span class="lbl">${origenEmoji} Origen</span><span class="val">${r.origen || 'Argentina'}${r.provincia ? ' · '+r.provincia : ''}</span></div>
+      <div class="row"><span class="lbl">🛫 Retiro</span><span class="val">${String(r.fecha_inicio||'').substring(0,10)} — ${r.lugar_retiro || '-'}</span></div>
+      <div class="row"><span class="lbl">🛬 Devolución</span><span class="val">${String(r.fecha_fin||'').substring(0,10)} — ${r.lugar_devolucion || '-'}</span></div>
+      <div class="row"><span class="lbl">📅 Días</span><span class="val">${dias}</span></div>
+      <div class="row"><span class="lbl">${pagoEmoji} Método de Pago</span><span class="val">${String(r.metodo_pago||'efectivo').replace(/_/g,' ')}</span></div>
+      <div class="row"><span class="lbl">🛡️ Garantía</span><span class="val">USD ${r.garantia_usd || 400}</span></div>
+
+      <div class="total"><span class="lbl">💰 TOTAL</span><span>ARS $${parseFloat(r.monto_total_ars||0).toLocaleString('es-AR')}</span></div>
+
+      <div class="row" style="margin-top:14px"><span class="lbl">🏷️ Estado</span><span class="val">${r.estado_reserva || r.estado || 'pendiente'}</span></div>
+
+      ${reqsHtml}
+
       <div class="footer">Buenos vientos 🌬️ — Good Trip Mendoza</div>
       </body></html>
     `);
     w.document.close();
-    w.print();
   };
 
   // WhatsApp al cliente
