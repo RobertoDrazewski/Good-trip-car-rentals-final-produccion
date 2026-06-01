@@ -53,6 +53,18 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuote
   // Abrir el calendario nativo al hacer clic en cualquier parte del campo
   const abrirCalendario = e => { try { e.currentTarget.showPicker(); } catch (_) {} };
 
+  // 🚗 Escuchar la selección de vehículo disparada desde el CarGrid (botón "Alquilar")
+  // El CarGrid emite: window.dispatchEvent(new CustomEvent('autoSeleccionarVehiculo', { detail: { autoId } }))
+  useEffect(() => {
+    const onSeleccionarVehiculo = (e) => {
+      const autoId = e?.detail?.autoId;
+      if (autoId === undefined || autoId === null) return;
+      setForm(p => ({ ...p, auto_id: String(autoId) }));
+    };
+    window.addEventListener('autoSeleccionarVehiculo', onSeleccionarVehiculo);
+    return () => window.removeEventListener('autoSeleccionarVehiculo', onSeleccionarVehiculo);
+  }, []);
+
   // Verificar disponibilidad al cambiar auto o fechas
   useEffect(() => {
     if (!form.auto_id||!form.desde||!form.hasta) { setOcupado(null); return; }
@@ -131,7 +143,7 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuote
   const inp='w-full bg-[#121319] border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-[#88BDF2] outline-none text-white';
   const lbl='text-[10px] uppercase text-slate-400 font-bold ml-1 mb-1 block';
 
-  const disponibles = autos.filter(a=>a.estado==='Disponible');
+  const disponibles = autos.filter(a => a.estado?.toLowerCase() === 'disponible' || a.estado === 'Disponible');
 
   return (
     <div className="w-full max-w-4xl mx-auto bg-[#1E222F] border border-slate-800 rounded-[2rem] p-8 shadow-2xl font-sans text-white">
