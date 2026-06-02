@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import {
-  Loader2, Star, Car, Check, Shield, Wrench, Sparkles,
+  Loader2, Star, Car, Check,
   Snowflake, Bluetooth, Navigation, Armchair, Sun, ShieldCheck,
   Disc, Baby, Camera, Gauge, Settings2, Cog, Fuel, Droplet,
   Leaf, Mountain, SlidersHorizontal
@@ -105,11 +105,11 @@ export default function CarGrid() {
               className="bg-[#1E222F] border border-slate-800/60 rounded-3xl overflow-hidden shadow-2xl hover:border-[#88BDF2]/40 transition-all group flex flex-col justify-between"
             >
               {/* Encabezado Visual e Imagen */}
-              <div className="w-full h-52 bg-[#121319]/80 relative overflow-hidden flex items-center justify-center border-b border-slate-800/40">
+              <div className="w-full aspect-[4/3] bg-[#121319]/80 relative overflow-hidden flex items-center justify-center border-b border-slate-800/40">
                 {a.imagen_url ? (
-                  <img src={a.imagen_url} alt={a.modelo} className="object-contain w-full h-full p-4 transform group-hover:scale-105 transition-transform duration-500" />
+                  <img src={a.imagen_url} alt={a.modelo} className="object-contain w-full h-full p-2 transform group-hover:scale-105 transition-transform duration-500" />
                 ) : (
-                  <Car className="text-[#6F7D93] opacity-20" size={64} />
+                  <Car className="text-[#6F7D93] opacity-20" size={96} />
                 )}
                 
                 <div className="absolute top-4 left-4 bg-[#121319]/90 border border-slate-800 backdrop-blur-md px-3 py-1.5 rounded-xl flex items-center gap-1.5">
@@ -117,16 +117,10 @@ export default function CarGrid() {
                   <span className="text-[10px] font-black text-white">5.0</span>
                   <span className="text-[9px] text-[#6F7D93] font-bold uppercase">Mendoza</span>
                 </div>
-
-                {a.patente && (
-                  <div className="absolute top-4 right-4 bg-[#121319] border border-slate-800 text-slate-400 font-mono text-[9px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider">
-                    {a.patente}
-                  </div>
-                )}
               </div>
 
               {/* Contenido Ficha Informativa */}
-              <div className="p-6 flex-1 flex flex-col justify-between gap-5">
+              <div className="p-5 flex-1 flex flex-col justify-between gap-4">
                 <div className="text-left">
                   <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2 group-hover:text-[#88BDF2] transition-colors">
                     {a.modelo}
@@ -135,54 +129,32 @@ export default function CarGrid() {
                     {a.descripcion_larga || 'Vehículo equipado con altos estándares operacionales y de seguridad.'}
                   </p>
 
-                  {/* 📊 RENDER DE LAS 3 BARRAS DE PROGRESO DINÁMICAS */}
-                  <div className="space-y-3 bg-[#121319]/40 p-4 rounded-2xl border border-slate-800/40 mb-4">
-                    <div>
-                      <div className="flex justify-between text-[8px] uppercase font-black tracking-wider text-slate-400 mb-1">
-                        <span className="flex items-center gap-1"><Sparkles size={10} className="text-[#88BDF2]" /> Confort</span>
-                        <span className="font-mono text-white">{caracteristicas.puntaje_confort || 5}/10</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-[#121319] rounded-full overflow-hidden">
-                        <div className="h-full bg-[#88BDF2] transition-all duration-500" style={{ width: `${(caracteristicas.puntaje_confort || 5) * 10}%` }}></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-[8px] uppercase font-black tracking-wider text-slate-400 mb-1">
-                        <span className="flex items-center gap-1"><Shield size={10} className="text-emerald-400" /> Seguridad</span>
-                        <span className="font-mono text-white">{caracteristicas.puntaje_seguridad || 5}/10</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-[#121319] rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${(caracteristicas.puntaje_seguridad || 5) * 10}%` }}></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-[8px] uppercase font-black tracking-wider text-slate-400 mb-1">
-                        <span className="flex items-center gap-1"><Wrench size={10} className="text-amber-400" /> Ficha Técnica</span>
-                        <span className="font-mono text-white">{caracteristicas.puntaje_ficha || 5}/10</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-[#121319] rounded-full overflow-hidden">
-                        <div className="h-full bg-amber-500 transition-all duration-500" style={{ width: `${(caracteristicas.puntaje_ficha || 5) * 10}%` }}></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 🏷️ DESPLIEGUE DE TODOS LOS ÍCONOS ACTIVADOS */}
+                  {/* 🏷️ DESPLIEGUE DE LOS ÍCONOS DE EQUIPAMIENTO ACTIVO (PROTAGONISTAS) */}
                   {listaIconosClasificados.length > 0 ? (
-                    <div className="mt-4">
-                      <span className="text-[8px] uppercase font-black text-[#6F7D93] tracking-widest block mb-2">Equipamiento Activo:</span>
-                      <div className="flex flex-wrap gap-1.5">
+                    <div className="mt-2">
+                      <span className="text-[9px] uppercase font-black text-[#6F7D93] tracking-widest block mb-2.5">Equipamiento Destacado</span>
+                      <div className="grid grid-cols-4 gap-2">
                         {listaIconosClasificados.map((key) => {
                           const IconoEquip = MAPA_ICONOS_LUCIDE[key] || Check;
                           return (
-                            <span key={key} className="bg-white/5 border border-slate-800 text-[9px] font-black uppercase text-slate-300 px-2 py-1 rounded-lg flex items-center gap-1">
-                              <IconoEquip size={10} className="text-[#88BDF2]" />
-                              {MAPA_ICONOS[key] || key}
-                            </span>
+                            <div
+                              key={key}
+                              className="bg-[#121319]/60 border border-slate-800/60 rounded-xl py-2.5 px-1 flex flex-col items-center justify-start gap-1.5 hover:border-[#88BDF2]/40 hover:bg-[#88BDF2]/5 transition-colors"
+                            >
+                              <IconoEquip size={24} className="text-[#88BDF2] shrink-0" />
+                              <span className="text-[8px] font-bold uppercase text-slate-400 text-center leading-tight tracking-tight">
+                                {MAPA_ICONOS[key] || key}
+                              </span>
+                            </div>
                           );
                         })}
                       </div>
                     </div>
-                  ) : null}
+                  ) : (
+                    <div className="mt-2 text-[10px] text-[#6F7D93] uppercase font-bold tracking-wider">
+                      Equipamiento estándar
+                    </div>
+                  )}
                 </div>
 
                 {/* Footer: Precio del Mes Directo */}

@@ -33,32 +33,34 @@ export default function GoogleReviews() {
     <div className="w-full bg-[#1E222F] border border-slate-800 rounded-[2rem] p-8 shadow-2xl font-sans text-white">
       
       {/* Cabecera de Reseñas */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-6 mb-8 border-b border-slate-800/60 pb-6">
-        <div className="text-center sm:text-left">
-          <h2 className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
-            <span>Opiniones de</span>&nbsp;<span className="text-[#88BDF2]">Clientes</span>
-          </h2>
-          <p className="text-slate-400 text-[11px] mt-1 tracking-wide font-medium">
-            La confianza de quienes ya recorrieron Mendoza.
-          </p>
-        </div>
+      <div className="flex flex-col items-center gap-5 mb-8 border-b border-slate-800/60 pb-6">
 
-        {/* Badge de Google Rating optimizado para no desbordar */}
-        <div className="flex items-center gap-3.5 bg-[#121319] border border-slate-800 p-3.5 rounded-2xl shrink-0 w-full sm:w-auto min-w-[240px]">
-          <img src={logoBlanco} alt="Good Trip" className="h-28 w-auto object-contain shrink-0" />
-          <div className="min-w-0 flex-1">
+        {/* Badge de Google Rating (5 estrellas) */}
+        <div className="flex items-center justify-center gap-3.5 bg-[#121319] border border-slate-800 p-3.5 rounded-2xl w-full sm:w-auto">
+          <img src={logoBlanco} alt="Good Trip" className="h-24 w-auto object-contain shrink-0" />
+          <div>
             <div className="flex items-center gap-1.5 text-amber-400">
-              <span className="text-white font-black text-sm font-mono">4.9</span>
+              <span className="text-white font-black text-base font-mono">5.0</span>
               <div className="flex items-center gap-0.5 shrink-0">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={13} fill="currentColor" />
+                  <Star key={i} size={15} fill="currentColor" />
                 ))}
               </div>
             </div>
-            <p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold mt-0.5 whitespace-nowrap">
+            <p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold mt-0.5">
               Calificación en Google Reviews
             </p>
           </div>
+        </div>
+
+        {/* Título debajo del bloque de estrellas */}
+        <div className="text-center">
+          <h2 className="text-xl font-black uppercase tracking-tight">
+            Opiniones de <span className="text-[#88BDF2]">Clientes</span>
+          </h2>
+          <p className="text-slate-400 text-xs mt-1.5 tracking-wide font-medium">
+            La confianza de quienes ya recorrieron Mendoza.
+          </p>
         </div>
       </div>
 
@@ -91,12 +93,12 @@ export default function GoogleReviews() {
       </div>
 
       {/* Botones CTA */}
-      <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mt-8">
+      <div className="flex flex-col sm:flex-row justify-center items-stretch gap-3.5 mt-8">
         <a
           href="https://maps.app.goo.gl/dNpeKgDpRNvJ1QLp6"
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-4 py-3.5 bg-white text-[#121319] rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-[#88BDF2] transition-colors duration-300 shadow-lg"
+          className="w-full sm:w-auto sm:flex-1 flex items-center justify-center gap-2.5 px-5 py-4 bg-white text-[#121319] rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#88BDF2] transition-colors duration-300 shadow-lg active:scale-[0.98]"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -112,7 +114,7 @@ export default function GoogleReviews() {
           href="https://www.instagram.com/good.triprentals"
           target="_blank"
           rel="noopener noreferrer"
-          className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 px-4 py-3.5 bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737] text-white rounded-xl font-black text-[11px] uppercase tracking-widest hover:opacity-90 transition-opacity duration-300 shadow-lg"
+          className="w-full sm:w-auto sm:flex-1 flex items-center justify-center gap-2.5 px-5 py-4 bg-gradient-to-r from-[#833AB4] via-[#E1306C] to-[#F77737] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-opacity duration-300 shadow-lg active:scale-[0.98]"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
             <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>

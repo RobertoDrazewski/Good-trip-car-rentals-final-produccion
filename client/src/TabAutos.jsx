@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import {
-  Car, Trash2, Loader2, Plus, X, AlertCircle, Pencil, // 👈 Se agregó Pencil
+  Car, Trash2, Loader2, Plus, X, AlertCircle, Pencil, Check, // 👈 Se agregó Pencil y Check
   Snowflake, Bluetooth, Navigation, Armchair, Sun, ShieldCheck,
   Disc, Baby, Camera, Gauge, Settings2, Cog, Fuel, Droplet,
   Leaf, Mountain, SlidersHorizontal
@@ -233,7 +233,7 @@ export default function TabAutos() {
           <h2 className="text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
             <Car className="text-[#88BDF2]" size={22} /> Gestión Avanzada de Flota
           </h2>
-          <p className="text-xs text-[#6F7D93] uppercase font-bold tracking-wider mt-0.5">Asignación de barras de rendimiento e íconos</p>
+          <p className="text-xs text-[#6F7D93] uppercase font-bold tracking-wider mt-0.5">Asignación de equipamiento e íconos del vehículo</p>
         </div>
         <button
           onClick={showAddAuto ? handleCancelForm : () => setShowAddAuto(true)}
@@ -299,77 +299,74 @@ export default function TabAutos() {
             <textarea rows="2" className="w-full bg-[#121319] border border-slate-800 rounded-xl p-3 text-xs text-white outline-none focus:border-[#88BDF2]" value={newAuto.descripcion_larga} onChange={e => setNewAuto({...newAuto, descripcion_larga: e.target.value})} placeholder="Escribe detalles del equipamiento del vehículo..."></textarea>
           </div>
 
-          <div className="bg-[#121319] p-4 rounded-2xl border border-slate-800/60 mb-6">
-            <h4 className="text-xs font-black uppercase text-[#88BDF2] tracking-widest mb-4">Métricas de Rendimiento (Barras de Nivel 1 a 10)</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <div className="flex justify-between text-[10px] uppercase font-black mb-1.5">
-                  <span className="text-white">Nivel de Confort</span>
-                  <span className="text-[#88BDF2] font-mono">{newAuto.puntaje_confort}/10</span>
-                </div>
-                <input type="range" min="1" max="10" className="w-full accent-[#88BDF2]" value={newAuto.puntaje_confort} onChange={e => setNewAuto({...newAuto, puntaje_confort: e.target.value})} />
-              </div>
-              <div>
-                <div className="flex justify-between text-[10px] uppercase font-black mb-1.5">
-                  <span className="text-white">Nivel de Seguridad</span>
-                  <span className="text-[#88BDF2] font-mono">{newAuto.puntaje_seguridad}/10</span>
-                </div>
-                <input type="range" min="1" max="10" className="w-full accent-[#88BDF2]" value={newAuto.puntaje_seguridad} onChange={e => setNewAuto({...newAuto, puntaje_seguridad: e.target.value})} />
-              </div>
-              <div>
-                <div className="flex justify-between text-[10px] uppercase font-black mb-1.5">
-                  <span className="text-white">Ficha Técnica Gral.</span>
-                  <span className="text-[#88BDF2] font-mono">{newAuto.puntaje_ficha}/10</span>
-                </div>
-                <input type="range" min="1" max="10" className="w-full accent-[#88BDF2]" value={newAuto.puntaje_ficha} onChange={e => setNewAuto({...newAuto, puntaje_ficha: e.target.value})} />
-              </div>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div className="bg-[#121319]/50 p-4 rounded-2xl border border-slate-800/40">
-              <h5 className="text-[10px] uppercase font-black text-[#88BDF2] tracking-wider mb-3 border-b border-slate-800 pb-1.5">Íconos de Confort</h5>
+              <h5 className="text-[10px] uppercase font-black text-[#88BDF2] tracking-wider mb-3 border-b border-slate-800 pb-1.5">Equipamiento de Confort</h5>
               <div className="space-y-2">
                 {CONFIG_CATEGORIAS.confort.map(item => {
                   const ItemIcon = item.Icon;
+                  const activo = !!newAuto.iconos_seleccionados[item.id];
                   return (
-                    <label key={item.id} className="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer select-none">
-                      <input type="checkbox" className="accent-[#88BDF2]" checked={!!newAuto.iconos_seleccionados[item.id]} onChange={() => handleToggleIcono(item.id)} />
-                      <ItemIcon size={14} className="text-[#88BDF2] shrink-0" />
-                      <span>{item.label}</span>
-                    </label>
+                    <button
+                      type="button"
+                      key={item.id}
+                      onClick={() => handleToggleIcono(item.id)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${activo ? 'bg-[#88BDF2]/10 border-[#88BDF2]/40 text-white' : 'bg-[#1E222F] border-slate-800 text-slate-400 hover:border-slate-700'}`}
+                    >
+                      <span className={`rounded-lg p-2 flex items-center justify-center shrink-0 ${activo ? 'bg-[#88BDF2]/20' : 'bg-[#121319]'}`}>
+                        <ItemIcon size={16} className={activo ? 'text-[#88BDF2]' : 'text-slate-500'} />
+                      </span>
+                      <span className="flex-1 text-left leading-tight">{item.label}</span>
+                      {activo && <Check size={15} className="text-[#88BDF2] shrink-0" />}
+                    </button>
                   );
                 })}
               </div>
             </div>
 
             <div className="bg-[#121319]/50 p-4 rounded-2xl border border-slate-800/40">
-              <h5 className="text-[10px] uppercase font-black text-emerald-400 tracking-wider mb-3 border-b border-slate-800 pb-1.5">Íconos de Seguridad</h5>
+              <h5 className="text-[10px] uppercase font-black text-emerald-400 tracking-wider mb-3 border-b border-slate-800 pb-1.5">Equipamiento de Seguridad</h5>
               <div className="space-y-2">
                 {CONFIG_CATEGORIAS.seguridad.map(item => {
                   const ItemIcon = item.Icon;
+                  const activo = !!newAuto.iconos_seleccionados[item.id];
                   return (
-                    <label key={item.id} className="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer select-none">
-                      <input type="checkbox" className="accent-emerald-400" checked={!!newAuto.iconos_seleccionados[item.id]} onChange={() => handleToggleIcono(item.id)} />
-                      <ItemIcon size={14} className="text-emerald-400 shrink-0" />
-                      <span>{item.label}</span>
-                    </label>
+                    <button
+                      type="button"
+                      key={item.id}
+                      onClick={() => handleToggleIcono(item.id)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${activo ? 'bg-emerald-400/10 border-emerald-400/40 text-white' : 'bg-[#1E222F] border-slate-800 text-slate-400 hover:border-slate-700'}`}
+                    >
+                      <span className={`rounded-lg p-2 flex items-center justify-center shrink-0 ${activo ? 'bg-emerald-400/20' : 'bg-[#121319]'}`}>
+                        <ItemIcon size={16} className={activo ? 'text-emerald-400' : 'text-slate-500'} />
+                      </span>
+                      <span className="flex-1 text-left leading-tight">{item.label}</span>
+                      {activo && <Check size={15} className="text-emerald-400 shrink-0" />}
+                    </button>
                   );
                 })}
               </div>
             </div>
 
             <div className="bg-[#121319]/50 p-4 rounded-2xl border border-slate-800/40">
-              <h5 className="text-[10px] uppercase font-black text-amber-400 tracking-wider mb-3 border-b border-slate-800 pb-1.5">Íconos de Ficha Técnica</h5>
+              <h5 className="text-[10px] uppercase font-black text-amber-400 tracking-wider mb-3 border-b border-slate-800 pb-1.5">Equipamiento Ficha Técnica</h5>
               <div className="space-y-2">
                 {CONFIG_CATEGORIAS.ficha.map(item => {
                   const ItemIcon = item.Icon;
+                  const activo = !!newAuto.iconos_seleccionados[item.id];
                   return (
-                    <label key={item.id} className="flex items-center gap-2.5 text-xs text-slate-300 cursor-pointer select-none">
-                      <input type="checkbox" className="accent-amber-400" checked={!!newAuto.iconos_seleccionados[item.id]} onChange={() => handleToggleIcono(item.id)} />
-                      <ItemIcon size={14} className="text-amber-400 shrink-0" />
-                      <span>{item.label}</span>
-                    </label>
+                    <button
+                      type="button"
+                      key={item.id}
+                      onClick={() => handleToggleIcono(item.id)}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${activo ? 'bg-amber-400/10 border-amber-400/40 text-white' : 'bg-[#1E222F] border-slate-800 text-slate-400 hover:border-slate-700'}`}
+                    >
+                      <span className={`rounded-lg p-2 flex items-center justify-center shrink-0 ${activo ? 'bg-amber-400/20' : 'bg-[#121319]'}`}>
+                        <ItemIcon size={16} className={activo ? 'text-amber-400' : 'text-slate-500'} />
+                      </span>
+                      <span className="flex-1 text-left leading-tight">{item.label}</span>
+                      {activo && <Check size={15} className="text-amber-400 shrink-0" />}
+                    </button>
                   );
                 })}
               </div>
