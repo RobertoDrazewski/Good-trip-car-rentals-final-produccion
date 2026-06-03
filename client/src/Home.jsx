@@ -19,8 +19,8 @@ export default function Home() {
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
   const [autos,    setAutos]    = useState([]);
-  const [tarifas,  setTarifas]  = useState([]);   // ← precios_mensuales completo
-  const [reservas, setReservas] = useState([]);   // ← para verificar disponibilidad
+  const [tarifas,  setTarifas]  = useState([]);   
+  const [reservas, setReservas] = useState([]);   
   const [rutas,    setRutas]    = useState([]);
   const [promos,   setPromos]   = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -33,10 +33,10 @@ export default function Home() {
         setLoading(true);
         const [carsRes, tarifasRes, rutasRes, bannersRes, reservasRes] = await Promise.allSettled([
           axios.get(`${apiUrl}/api/cars`),
-          axios.get(`${apiUrl}/api/precios-mensuales`),   // ← CORRECTO: tarifas reales
+          axios.get(`${apiUrl}/api/precios-mensuales`),   
           axios.get(`${apiUrl}/api/routes/all`),
           axios.get(`${apiUrl}/api/banners/all-active`),
-          axios.get(`${apiUrl}/api/reservas/publicas`),   // endpoint público solo con fechas/auto_id/estado
+          axios.get(`${apiUrl}/api/reservas/publicas`),   
         ]);
 
         const norm = (res, key) => {
@@ -97,23 +97,34 @@ export default function Home() {
       <NavBar/>
       <Hero/>
 
-      {/* CARRUSEL DE PROMOS */}
+      {/* CARRUSEL DE PROMOS: Altura optimizada para que el logo no se corte */}
       {promos.length > 0 && (
         <section className="w-full max-w-7xl mx-auto px-4 pt-4 pb-8">
-          <div className="relative w-full overflow-hidden rounded-3xl h-64 md:h-96 border border-white/10 shadow-2xl">
+          {/* Aumentamos la altura a 520px para dar espacio al logo arriba */}
+          <div className="relative w-full overflow-hidden rounded-3xl h-[520px] border border-white/10 shadow-2xl">
             <div className="flex transition-transform duration-700 ease-in-out h-full"
               style={{ transform: `translateX(-${currentIndex * 100}%)` }}>
               {promos.map(promo => (
                 <div key={promo.id} className="min-w-full h-full relative">
-                  <img src={promo.imagen_url} alt={promo.titulo} className="w-full h-full object-cover"/>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent p-8 flex flex-col justify-end">
-                    <span className="text-[#88BDF2] font-black uppercase text-xs tracking-widest">{promo.descuento}% OFF</span>
-                    <h3 className="text-2xl md:text-4xl font-black text-white uppercase italic">{promo.titulo}</h3>
-                    <p className="text-slate-300 text-xs md:text-sm max-w-xl mt-1.5 line-clamp-2">{promo.descripcion}</p>
+                  {/* 
+                    Cambiamos object-[center_55%] por un ajuste más conservador:
+                    object-[center_60%] permite que el auto baje y el logo suba,
+                    dando ese centímetro extra que necesitas arriba.
+                  */}
+                  <img src={promo.imagen_url} alt={promo.titulo} className="w-full h-full object-cover object-[center_60%]"/>
+                  
+                  {/* Degradado para dar más contraste al logo si es necesario */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 p-10 flex flex-col justify-end">
+                    <span className="text-[#88BDF2] font-black uppercase text-xs tracking-widest drop-shadow-md">
+                      {Number(promo.descuento) > 0 ? `${promo.descuento}% OFF` : 'Precio de lista'}
+                    </span>
+                    <h3 className="text-2xl md:text-5xl font-black text-white uppercase italic drop-shadow-xl mt-1">{promo.titulo}</h3>
+                    <p className="text-slate-300 text-sm md:text-base max-w-2xl mt-1.5 line-clamp-2 drop-shadow-lg">{promo.descripcion}</p>
                   </div>
                 </div>
               ))}
             </div>
+            {/* Controles */}
             <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
               {promos.map((_, idx) => (
                 <button key={idx} onClick={() => setCurrentIndex(idx)}
@@ -138,7 +149,6 @@ export default function Home() {
       <section id="reserva-y-opiniones"
         className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 lg:grid-cols-2 gap-8 items-start relative z-20">
         <div className="w-full">
-          {/* ✅ Pasamos tarifas reales de precios_mensuales y reservas para validar disponibilidad */}
           <BookingForm
             autos={autos}
             tarifas={tarifas}

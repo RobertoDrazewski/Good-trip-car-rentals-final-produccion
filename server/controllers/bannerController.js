@@ -2,23 +2,53 @@
 const { OpenAI } = require('openai');
 const cloudinary = require('cloudinary').v2;
 const db = require('../config/db.config');
+const path = require('path');
+const fs = require('fs');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Configuración de Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-/**
- * 1. GENERAR PROPUESTA CON IA (Copy + Director Creativo + Modelo gpt-image-2)
- */
+const MACRO_LOGO_PUBLIC_ID = 'good_trip/macro_logo';
+let _macroLogoListo = false;
+
+const prepararLogoMacro = async () => {
+  if (_macroLogoListo) return true;
+
+  const candidatos = [
+    process.env.MACRO_LOGO_PATH,                                                       
+    path.join(__dirname, '..', 'assets', 'macro-logo.png'),                            
+    path.join(__dirname, '..', '..', 'client', 'src', 'assets', 'macro-logo.png'),     
+    path.join(__dirname, '..', '..', 'client', 'public', 'macro-logo.png'),            
+  ].filter(Boolean);
+
+  const archivo = candidatos.find(p => { try { return fs.existsSync(p); } catch { return false; } });
+  if (!archivo) {
+    console.warn('⚠️ No encontré macro-logo.png. Busqué en:\n   ' + candidatos.join('\n   '));
+    return false;
+  }
+
+  try {
+    await cloudinary.uploader.upload(archivo, {
+      public_id: MACRO_LOGO_PUBLIC_ID, overwrite: false, resource_type: 'image'
+    });
+    _macroLogoListo = true;
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
+const esPromoMacro = (titulo, descripcion) =>
+  /macro/i.test(`${titulo || ''} ${descripcion || ''}`);
+
 const generarPropuesta = async (req, res) => {
   try {
     const { evento, descuento } = req.body;
-    // Permitimos descuento = 0 ("precio de lista"); solo exigimos que vengan presentes
     if (!evento || descuento === undefined || descuento === null || descuento === '') {
       return res.status(400).json({ error: "Datos incompletos." });
     }
@@ -26,7 +56,6 @@ const generarPropuesta = async (req, res) => {
     let descripcionFinal = "";
     let imageUrl = "";
 
-    // 1A. GENERACIÓN DEL COPY COMERCIAL
     try {
       const completion = await openai.chat.completions.create({
         model: "gpt-4-turbo",
@@ -40,57 +69,56 @@ const generarPropuesta = async (req, res) => {
       descripcionFinal = `¡Aprovechá un ${descuento}% de descuento en Mendoza para este ${evento}! Reserva hoy tu vehículo.`;
     }
 
-    // 1B. LÓGICA DINÁMICA DE PROMPT (DIRECTOR CREATIVO MENDOCINO - SE MANTIENE INTACTO)
+    // DETECCIÓN INTELIGENTE DE BANCO MACRO PARA EL PROMPT VISUAL
+    const esMacro = /macro/i.test(evento);
     let promptImagenOptimizado = "";
+
     try {
       const promptBuilder = await openai.chat.completions.create({
         model: "gpt-4-turbo",
         messages: [{
           role: "system",
-          content: `Eres un Director de Arte experto en publicidad para alquiler de autos en Mendoza, Argentina. 
+          content: `You are an expert Digital Marketing Agent and Art Director specializing in premium car rental advertising in Mendoza, Argentina. Your job is to output a stunning, realistic commercial image prompt in English.
 
-          *REGLA #1 — EL AUTO ES EL PROTAGONISTA ABSOLUTO:*
-          - La imagen SIEMPRE debe tener un automóvil de alquiler moderno y limpio como sujeto principal, grande, nítido y en primer plano (hero shot).
-          - El auto ocupa el centro de atención. El paisaje, la temporada y el evento son SOLO el fondo/contexto, nunca el tema principal.
-          - PROHIBIDO generar escenas sin un auto claramente visible. PROHIBIDO mercados, ferias, personas comprando, retratos de personas como tema central, o cualquier escena que no sea claramente sobre alquiler de autos.
+          ${esMacro ? `
+          *CRITICAL RULES FOR BANCO MACRO PROMOTIONS (STRICT LAYOUT):*
+          1. MANDATORY PANORAMIC FRAMING: The car must be placed EXACTLY IN THE HORIZONTAL CENTER of the image (floating in the middle vertical alignment, not at the bottom) because the canvas will be cropped into a wide horizontal banner.
+          2. DARK SPACE FOR WHITE LOGO: Directly above the car, design a clean, DARK background area (deep shadows, dark mountain silhouettes, or night sky). Do NOT use bright blue skies or direct bright sun in that top-middle area, as a white logo will be overlaid on top.
+          3. FLEET: Feature a modern rental car (Fiat Cronos or Nissan Versa) in black, gray, or white.
+          ` : `
+          *RULES FOR GENERAL MARKETING PROMOTIONS (MENDOZA RADIANT STYLE):*
+          1. WEATHER & LIGHTING: Mendoza is famous for having 300+ sunny days a year. Always feature gorgeous, bright, radiant sunny weather with clear skies. EXCEPTION: Only if the user prompt mentions a dinner or going out at night ("cena", "cenar", "noche"), you must switch to a vibrant, elegant evening/night setting with beautiful ambient lighting.
+          2. CAR CATALOG (OUR FLEET): The image must explicitly feature one modern rental car from our precise catalog: either a "Fiat Cronos" or a "Nissan Versa". The car color must be strictly black, gray, or white.
+          3. REGIONAL & SEASONAL CONTEXT (Adapt strictly to the user's event):
+             - Autumn ("otoño", "bodegas", "vino", "wineries"): The car driving along scenic roads, surrounded by golden, orange, and reddish vineyards under a warm, glowing sun.
+             - Summer ("verano"): Feature the Potrerillos dam ("el dique Potrerillos") with clear sparkling turquoise water and people practicing water sports (windsurfing, kayaking) in the background scenery.
+             - Winter ("invierno", "nieve"): Show the breathtaking, massive snow-covered Andes mountains with clear skies and people skiing in the background.
+             - Christmas / Three Kings Day ("navidad", "reyes magos"): Note that December/January brings 40°C summer heat in Mendoza. Show a joyful Santa Claus wearing a light summer short-sleeved shirt, or elegant summer-themed festive holiday decorations outdoors.
+             - Easter & National Holidays ("pascuas", "fiestas patrias", "feriados nacionales", "25 de mayo", "9 de julio"): Elegantly incorporate beautiful Argentine flags waving proudly under a radiant blue sky.
+             - Family/Special Days (Mother's Day, Father's Day, Children's Day, Holy Week / Semana Santa): Create a warm, emotional, professional marketing backdrop showing premium family or leisure road trips around Mendoza's iconic landscapes.
+          `}
 
-          *REGLA #2 — GEOGRAFÍA Y CLIMA (HEMISFERIO SUR):* 
-          - Diciembre (Navidad) es VERANO INTENSO (calor, 40°C, sol radiante). PROHIBIDO USAR NIEVE EN NAVIDAD.
-          - Enero/Febrero: Verano. Julio: Invierno (frío, nieve en cordillera).
-
-          *REGLA #3 — PROMOCIONES BANCARIAS / FINANCIACIÓN / CUOTAS (ej: "Banco Macro", "cuotas sin interés", "3 y 6 cuotas"):*
-          - NO intentes dibujar logos, tarjetas, texto ni el isotipo del banco: los modelos de imagen los renderizan mal y quedan ilegibles.
-          - En su lugar, generá una escena premium y aspiracional de alquiler de autos (el auto hero sobre paisaje mendocino soleado), estética comercial limpia y moderna, con una ZONA LIBRE / espacio negativo limpio en una esquina (cielo o pared lisa) donde luego se superpondrá el logo real del banco por encima.
-
-          TU OBJETIVO: prompts fotorrealistas de alta calidad (8k, cinematográfico) con el AUTO como héroe.
-
-          ESCENOGRAFÍA SEGÚN EVENTO (siempre con el auto en primer plano):
-          - Navidad (VERANO): auto moderno bajo sol fuerte y cielo azul, adornos navideños veraniegos sutiles de fondo.
-          - Vendimia / Caminos del Vino (Marzo/Otoño): el auto en un camino entre viñedos, bodega mendocina y Andes de fondo.
-          - Fiestas Patrias: el auto con banderas argentinas y escarapelas integradas sutilmente al ambiente.
-          - Invierno (Julio): el auto en ruta de alta montaña con los Andes nevados de fondo.
-          - Verano (Dique Potrerillos): el auto junto a un lago mendocino soleado.
-          - Otoño/Primavera: el auto resaltado con los colores de la estación.
-
-          FORMATO:
-          - NO agregues textos, letras, palabras ni logos en la imagen.
-          - Devuelve SOLO el texto del prompt en inglés, sin introducciones ni comillas.`
+          *STRICT NEGATIVE RULES:*
+          - NO text, letters, typography, fake signage, or logos drawn inside the image artwork.
+          - Output ONLY the final detailed prompt string in English. Do not add introductions or conversational filler.`
         }, {
           role: "user",
-          content: `Evento publicitario: "${evento}". Generá el prompt visual en inglés. Recordá: un AUTO DE ALQUILER moderno como sujeto principal en primer plano (hero shot), respetando el clima del hemisferio sur y la geografía mendocina. Si el evento menciona un banco, tarjetas o cuotas, NO dibujes logos ni texto: dejá una esquina limpia para superponer el logo real después.`
+          content: `Create the visual prompt for this promotional banner event: "${evento}".`
         }]
       });
       promptImagenOptimizado = promptBuilder.choices[0].message.content.trim();
     } catch (promptError) {
-      promptImagenOptimizado = "Cinematic professional advertising photography of a modern clean rental car as the main subject in the foreground (hero shot), on a scenic mountain road in Mendoza Argentina, majestic Andes mountains in the background, warm sunny light, highly detailed, 8k, no text, no logos.";
+      // Fallback seguro por si falla la API de texto
+      promptImagenOptimizado = esMacro 
+        ? "Cinematic advertising photography of a modern rental car situated directly in the horizontal CENTER. Above the car, a completely DARK background for text overlay, Mendoza Argentina, 8k, no text."
+        : `Cinematic marketing photography of a white Fiat Cronos driving through Mendoza, beautiful sunny day, professional composition, 8k, ultra-detailed, no text. Event context: ${evento}`;
     }
 
     console.log(`[IA Prompt Generado]: "${promptImagenOptimizado}"`);
 
-    // 1C. GENERACIÓN DE LA IMAGEN REAL (USANDO TU MODELO PERMITIDO: gpt-image-2)
     try {
       const image = await openai.images.generate({
-        model: "gpt-image-2", // 👈 Cambiado al modelo compatible de tu lista
+        model: "gpt-image-2",
         prompt: promptImagenOptimizado,
         n: 1,
         size: "1024x1024"
@@ -100,11 +128,9 @@ const generarPropuesta = async (req, res) => {
         imageUrl = image.data[0].url || image.data[0].b64_json;
       }
     } catch (imageError) {
-      console.error("❌ Error en generación de imagen con gpt-image-2:", imageError.message);
       imageUrl = "https://images.unsplash.com/photo-1589182373814-4d6d02a0fb20?q=80&w=1024&auto=format&fit=crop"; 
     }
 
-    // Preparar Base64 para el frontend en caso de ser necesario
     if (imageUrl && (imageUrl.startsWith("iVBORw0Gg") || (!imageUrl.startsWith("http") && imageUrl.length > 1000))) {
       imageUrl = `data:image/png;base64,${imageUrl.replace(/^data:image\/\w+;base64,/, "")}`;
     }
@@ -116,23 +142,25 @@ const generarPropuesta = async (req, res) => {
       descuento: parseInt(descuento)
     });
   } catch (error) {
-    console.error("Error general en el controlador de IA:", error);
     res.status(500).json({ error: "Error interno en el servidor de IA." }); 
   }
 };
 
-/**
- * 2. GUARDAR BANNER EN BD Y CLOUDINARY
- */
 const savePromo = async (req, res) => {
   try {
     let { titulo, descripcion, imagen_url, descuento, fecha_inicio, fecha_fin } = req.body;
-    
-    console.log("📤 Subiendo imagen de banner a Cloudinary...");
-    const uploadResponse = await cloudinary.uploader.upload(imagen_url, {
-      folder: "good_trip/banners"
-    });
 
+    const uploadOpts = { folder: "good_trip/banners" };
+    
+    if (esPromoMacro(titulo, descripcion) && await prepararLogoMacro()) {
+      uploadOpts.transformation = [
+        { overlay: MACRO_LOGO_PUBLIC_ID.replace(/\//g, ':') },
+        { width: 500, crop: "scale" },
+        { flags: "layer_apply", gravity: "center", y: -40 } 
+      ];
+    }
+
+    const uploadResponse = await cloudinary.uploader.upload(imagen_url, uploadOpts);
     const dbPath = uploadResponse.secure_url; 
     
     await db.query(
@@ -143,28 +171,20 @@ const savePromo = async (req, res) => {
     
     res.json({ success: true, dbPath });
   } catch (error) {
-    console.error("❌ Error al guardar la promoción:", error.message);
     res.status(500).json({ error: "No se pudo almacenar la promoción." });
   }
 };
 
-/**
- * 3. LISTAR TODOS LOS BANNERS
- */
 const getAllBanners = async (req, res) => {
   try {
     const result = await db.query(`SELECT * FROM banners_promo ORDER BY id DESC`);
     const rows = Array.isArray(result) ? (Array.isArray(result[0]) ? result[0] : result) : (result.rows || []);
     res.json(rows);
   } catch (error) {
-    console.error("❌ Error en getAllBanners:", error.message);
     res.status(500).json({ error: "Error de lectura DB." });
   }
 };
 
-/**
- * 4. ELIMINAR BANNER
- */
 const deleteBanner = async (req, res) => {
   try {
     const { id } = req.params;
@@ -175,9 +195,6 @@ const deleteBanner = async (req, res) => {
   }
 };
 
-/**
- * 5. CONSULTAR BANNERS ACTIVOS
- */
 const getAllActivePromos = async (req, res) => {
   try {
     const result = await db.query(`SELECT * FROM banners_promo WHERE fecha_fin >= CURDATE() OR fecha_fin IS NULL ORDER BY id DESC`);
