@@ -11,14 +11,18 @@ const extraerFilas = (r) => {
   return [];
 };
 
-// ── Calcula días con regla de 6 horas ──────────────────────────────────────
+// ── Calcula días (regla del cliente con medios días) ───────────────────────
+//   24h = 1 día · resto ≤3:30 → +0 · resto 4:00–7:30 → +0,5 · resto ≥8:00 → +1
 const calcularDias = (fIni, hIni, fFin, hFin) => {
   const ini = new Date(`${String(fIni).split('T')[0]}T${hIni||'10:00'}:00`);
   const fin = new Date(`${String(fFin).split('T')[0]}T${hFin||'10:00'}:00`);
-  const diffH = Math.max(0, (fin - ini) / 3_600_000);
-  const dias  = Math.floor(diffH / 24);
-  const resto = diffH % 24;
-  return Math.max(1, dias + (resto > 6 ? 1 : 0));
+  const diffH = Math.max(0, Math.round((fin - ini) / 3_600_000 * 2) / 2);
+  const full  = Math.floor(diffH / 24);
+  const resto = diffH - full * 24;
+  let extra = 0;
+  if (resto >= 8)       extra = 1;
+  else if (resto > 3.5) extra = 0.5;
+  return Math.max(1, full + extra);
 };
 
 /**
@@ -39,6 +43,11 @@ const createReserva = async (req, res) => {
     const mes  = fIni.getMonth() + 1;
     const anio = fIni.getFullYear();
     const dias = calcularDias(fecha_inicio, hora_inicio, fecha_fin, hora_fin);
+
+    // Mínimo de alquiler: 3 días
+    if (dias < 3) {
+      return res.status(400).json({ error: 'El alquiler mínimo es de 3 días.' });
+    }
 
     const rawT = await db.query(
       'SELECT * FROM precios_mensuales WHERE auto_id = ? AND mes = ? AND anio = ?',
@@ -63,9 +72,13 @@ const createReserva = async (req, res) => {
       const costoRet  = String(lugar_retiro||'').toLowerCase().includes('aeropuerto')    ? cRetiro : 0;
       const costoDevl = String(lugar_devolucion||'').toLowerCase().includes('aeropuerto') ? cDevol  : 0;
       const subtotal  = rentaBase + costoSil + costoRet + costoDevl + precLavado;
-      const factor    = metodo_pago === 'tarjeta_1' ? 1.08
-                      : metodo_pago === 'tarjeta_3' ? 1.16
-                      : metodo_pago === 'tarjeta_6' ? 1.32 : 1;
+      // Recargos por cuotas desde el panel (tarifa del mes); fallback 8/16/32
+      const recT1     = parseFloat(t.recargo_tarjeta_1 ?? 8);
+      const recT3     = parseFloat(t.recargo_tarjeta_3 ?? 16);
+      const recT6     = parseFloat(t.recargo_tarjeta_6 ?? 32);
+      const factor    = metodo_pago === 'tarjeta_1' ? 1 + recT1/100
+                      : metodo_pago === 'tarjeta_3' ? 1 + recT3/100
+                      : metodo_pago === 'tarjeta_6' ? 1 + recT6/100 : 1;
       sqlMonto = subtotal * factor;
     }
     sqlMonto = Math.round(sqlMonto);

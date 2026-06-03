@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   Calendar, Loader2, Settings2, Car, Wallet, 
-  ShieldCheck, Waves, Baby, PlaneTakeoff, PlaneLanding 
+  ShieldCheck, Waves, Baby, PlaneTakeoff, PlaneLanding, CreditCard 
 } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -12,7 +12,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const ANIO_ACTUAL = new Date().getFullYear();
 const ANIOS = Array.from({ length: 51 }, (_, i) => ANIO_ACTUAL + i);
 
-const EditableValue = ({ label, value, onSave, icon }) => {
+const EditableValue = ({ label, value, onSave, icon, prefix = '$', suffix = '' }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [val, setVal] = useState(value);
 
@@ -42,7 +42,7 @@ const EditableValue = ({ label, value, onSave, icon }) => {
         />
       ) : (
         <div onClick={() => setIsEditing(true)} className="cursor-pointer text-white font-mono font-bold text-lg hover:text-[#88BDF2]">
-          ${Math.floor(Number(value || 0)).toLocaleString('es-AR')}
+          {prefix}{Math.floor(Number(value || 0)).toLocaleString('es-AR')}{suffix}
         </div>
       )}
     </div>
@@ -52,7 +52,8 @@ const EditableValue = ({ label, value, onSave, icon }) => {
 const GLOBAL_VACIO = {
   cotizacion_dolar: 0, garantia_usd: 0, garantia_ars: 0,
   precio_sillita: 0, cargo_retiro_aeropuerto: 0,
-  cargo_devolucion_aeropuerto: 0, precio_lavado: 0
+  cargo_devolucion_aeropuerto: 0, precio_lavado: 0,
+  recargo_tarjeta_1: 8, recargo_tarjeta_3: 16, recargo_tarjeta_6: 32
 };
 
 export default function TabTarifas() {
@@ -133,6 +134,9 @@ export default function TabTarifas() {
           cargo_retiro_aeropuerto: globalConfig.cargo_retiro_aeropuerto,
           cargo_devolucion_aeropuerto: globalConfig.cargo_devolucion_aeropuerto,
           precio_lavado: globalConfig.precio_lavado,
+          recargo_tarjeta_1: globalConfig.recargo_tarjeta_1,
+          recargo_tarjeta_3: globalConfig.recargo_tarjeta_3,
+          recargo_tarjeta_6: globalConfig.recargo_tarjeta_6,
         },
         getAuthConfig()
       );
@@ -179,6 +183,19 @@ export default function TabTarifas() {
           <EditableValue label="Sillita Bebé"     icon={<Baby size={14}/>}         value={globalConfig.precio_sillita}             onSave={v => handleUpdateGlobal('precio_sillita', v)} />
           <EditableValue label="Retiro Aero"      icon={<PlaneTakeoff size={14}/>} value={globalConfig.cargo_retiro_aeropuerto}    onSave={v => handleUpdateGlobal('cargo_retiro_aeropuerto', v)} />
           <EditableValue label="Devol Aero"       icon={<PlaneLanding size={14}/>} value={globalConfig.cargo_devolucion_aeropuerto} onSave={v => handleUpdateGlobal('cargo_devolucion_aeropuerto', v)} />
+        </div>
+      </div>
+
+      {/* Recargos por Cuotas (lo que se le suma al cliente según el plan de pago) */}
+      <div className="bg-[#1E222F]/60 p-8 rounded-[2rem] border border-white/10 shadow-xl">
+        <h3 className="text-sm font-black text-white uppercase italic tracking-widest mb-2 flex items-center gap-2">
+          <CreditCard size={16} className="text-[#88BDF2]"/> Recargos por Cuotas ({mesesNom[selectedMes-1]} {selectedAnio})
+        </h3>
+        <p className="text-[11px] text-slate-500 mb-6">Porcentaje que se suma al total según el plan de pago. Poné <strong className="text-slate-300">0</strong> para "cuotas sin interés".</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <EditableValue label="Tarjeta · 1 Pago"  icon={<CreditCard size={14}/>} suffix="%" prefix="" value={globalConfig.recargo_tarjeta_1} onSave={v => handleUpdateGlobal('recargo_tarjeta_1', v)} />
+          <EditableValue label="Tarjeta · 3 Cuotas" icon={<CreditCard size={14}/>} suffix="%" prefix="" value={globalConfig.recargo_tarjeta_3} onSave={v => handleUpdateGlobal('recargo_tarjeta_3', v)} />
+          <EditableValue label="Tarjeta · 6 Cuotas" icon={<CreditCard size={14}/>} suffix="%" prefix="" value={globalConfig.recargo_tarjeta_6} onSave={v => handleUpdateGlobal('recargo_tarjeta_6', v)} />
         </div>
       </div>
 

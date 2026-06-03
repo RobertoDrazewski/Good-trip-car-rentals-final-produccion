@@ -18,7 +18,10 @@ cloudinary.config({
 const generarPropuesta = async (req, res) => {
   try {
     const { evento, descuento } = req.body;
-    if (!evento || !descuento) return res.status(400).json({ error: "Datos incompletos." });
+    // Permitimos descuento = 0 ("precio de lista"); solo exigimos que vengan presentes
+    if (!evento || descuento === undefined || descuento === null || descuento === '') {
+      return res.status(400).json({ error: "Datos incompletos." });
+    }
 
     let descripcionFinal = "";
     let imageUrl = "";
@@ -44,36 +47,42 @@ const generarPropuesta = async (req, res) => {
         model: "gpt-4-turbo",
         messages: [{
           role: "system",
-          content: `Eres un Director de Arte experto en publicidad para turismo en Mendoza, Argentina. 
-          
-          *REGLA CRÍTICA DE GEOGRAFÍA Y CLIMA:* Mendoza está en el HEMISFERIO SUR. 
-          - Diciembre (Navidad) es VERANO INTENSO (calor, 40°C, sol radiante).
-          - Enero/Febrero es Verano.
-          - Julio es Invierno (frío, nieve en cordillera).
-          *PROHIBIDO TOTALMENTE USAR NIEVE EN CONTEXTOS DE NAVIDAD.*
+          content: `Eres un Director de Arte experto en publicidad para alquiler de autos en Mendoza, Argentina. 
 
-          TU OBJETIVO: Crear prompts fotorrealistas de alta calidad (8k, cinematográfico) para fondos publicitarios.
-          
-          REGLAS DE ESCENOGRAFÍA ESPECÍFICAS (Aplica la que corresponda al evento):
-          - Navidad en Mendoza (VERANO): Muestra un ambiente de verano soleado y caluroso en Mendoza (sol fuerte, cielo azul intenso). Incluye adornos navideños tradicionales (luces, árboles) pero adaptados al calor. *PRIORIDAD ABSOLUTA:* Mostrar a Santa Claus recognoscible por su barba y colores, pero vestido con ropa de verano, como un traje de baño rojo o una camisa de manga corta roja, quizás sentado en una reposera junto a una piscina o comiendo un helado, en un entorno de verano mendocino.
-          - Fiesta del Melón: Muestra un festival local rural incorporando melones frescos en un campo soleado.
-          - Vendimia / Caminos del Vino (Marzo/Otoño): Viñedos extensos, arquitectura de bodega mendocina, uvas maduras, y un auto paseando por el camino, Andes de fondo.
-          - Fiestas Patrias o Nacionales: Integra sutilmente banderas argentinas y escarapelas en un ambiente de celebración.
-          - Invierno (Julio): Paisajes nevados en la alta montaña (Andes) con personas haciendo deportes de nieve.
-          - Verano (Enero/Dique): El dique Potrerillos u otro lago mendocino soleado con personas haciendo deportes acuáticos.
-          - Otoño / Primavera: Resalta los colores de la estación (hojas doradas en otoño, flores vibrantes en primavera).
-          
-          REGLAS DE FORMATO:
+          *REGLA #1 — EL AUTO ES EL PROTAGONISTA ABSOLUTO:*
+          - La imagen SIEMPRE debe tener un automóvil de alquiler moderno y limpio como sujeto principal, grande, nítido y en primer plano (hero shot).
+          - El auto ocupa el centro de atención. El paisaje, la temporada y el evento son SOLO el fondo/contexto, nunca el tema principal.
+          - PROHIBIDO generar escenas sin un auto claramente visible. PROHIBIDO mercados, ferias, personas comprando, retratos de personas como tema central, o cualquier escena que no sea claramente sobre alquiler de autos.
+
+          *REGLA #2 — GEOGRAFÍA Y CLIMA (HEMISFERIO SUR):* 
+          - Diciembre (Navidad) es VERANO INTENSO (calor, 40°C, sol radiante). PROHIBIDO USAR NIEVE EN NAVIDAD.
+          - Enero/Febrero: Verano. Julio: Invierno (frío, nieve en cordillera).
+
+          *REGLA #3 — PROMOCIONES BANCARIAS / FINANCIACIÓN / CUOTAS (ej: "Banco Macro", "cuotas sin interés", "3 y 6 cuotas"):*
+          - NO intentes dibujar logos, tarjetas, texto ni el isotipo del banco: los modelos de imagen los renderizan mal y quedan ilegibles.
+          - En su lugar, generá una escena premium y aspiracional de alquiler de autos (el auto hero sobre paisaje mendocino soleado), estética comercial limpia y moderna, con una ZONA LIBRE / espacio negativo limpio en una esquina (cielo o pared lisa) donde luego se superpondrá el logo real del banco por encima.
+
+          TU OBJETIVO: prompts fotorrealistas de alta calidad (8k, cinematográfico) con el AUTO como héroe.
+
+          ESCENOGRAFÍA SEGÚN EVENTO (siempre con el auto en primer plano):
+          - Navidad (VERANO): auto moderno bajo sol fuerte y cielo azul, adornos navideños veraniegos sutiles de fondo.
+          - Vendimia / Caminos del Vino (Marzo/Otoño): el auto en un camino entre viñedos, bodega mendocina y Andes de fondo.
+          - Fiestas Patrias: el auto con banderas argentinas y escarapelas integradas sutilmente al ambiente.
+          - Invierno (Julio): el auto en ruta de alta montaña con los Andes nevados de fondo.
+          - Verano (Dique Potrerillos): el auto junto a un lago mendocino soleado.
+          - Otoño/Primavera: el auto resaltado con los colores de la estación.
+
+          FORMATO:
           - NO agregues textos, letras, palabras ni logos en la imagen.
-          - Devuelve SOLO el texto del prompt in inglés, sin introducciones ni comillas.`
+          - Devuelve SOLO el texto del prompt en inglés, sin introducciones ni comillas.`
         }, {
           role: "user",
-          content: `Analiza este evento publicitario: "${evento}". Devuelve el prompt visual en inglés respetando estrictamente el clima del hemisferio sur, nuestra geografía mendocina y el formato.`
+          content: `Evento publicitario: "${evento}". Generá el prompt visual en inglés. Recordá: un AUTO DE ALQUILER moderno como sujeto principal en primer plano (hero shot), respetando el clima del hemisferio sur y la geografía mendocina. Si el evento menciona un banco, tarjetas o cuotas, NO dibujes logos ni texto: dejá una esquina limpia para superponer el logo real después.`
         }]
       });
       promptImagenOptimizado = promptBuilder.choices[0].message.content.trim();
     } catch (promptError) {
-      promptImagenOptimizado = "Cinematic professional background photography of a scenic mountain road trip in Mendoza Argentina, majestic Andes mountains, beautiful landscape, high detailed, 4k, no text.";
+      promptImagenOptimizado = "Cinematic professional advertising photography of a modern clean rental car as the main subject in the foreground (hero shot), on a scenic mountain road in Mendoza Argentina, majestic Andes mountains in the background, warm sunny light, highly detailed, 8k, no text, no logos.";
     }
 
     console.log(`[IA Prompt Generado]: "${promptImagenOptimizado}"`);

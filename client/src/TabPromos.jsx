@@ -108,11 +108,12 @@ export default function TabPromos() {
                 <label className="block text-[10px] font-black uppercase text-slate-400 mb-1.5">% Descuento</label>
                 <input 
                   type="number" 
-                  min="5" max="90"
+                  min="0" max="90"
                   value={promoData.descuento}
                   onChange={e => setPromoData({...promoData, descuento: e.target.value})}
                   className="w-full bg-[#121319] border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#88BDF2] font-mono text-center"
                 />
+                <p className="text-[9px] text-slate-500 mt-1">0% = "precio de lista" (ej: cuotas sin interés)</p>
               </div>
               <div className="col-span-1">
                 <label className="block text-[10px] font-black uppercase text-slate-400 mb-1.5">Vigencia Desde</label>
@@ -151,7 +152,7 @@ export default function TabPromos() {
               <div className="space-y-3">
                 <span className="text-[9px] font-black bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded-md uppercase tracking-wider">Propuesta Creativa Activa</span>
                 <img src={propuestaIA.imagen_url} className="w-full h-32 object-cover rounded-xl border border-slate-800 shadow-md" alt="Render" />
-                <h4 className="font-black text-sm text-white">{propuestaIA.titulo} — <span className="text-emerald-400">{propuestaIA.descuento}% OFF</span></h4>
+                <h4 className="font-black text-sm text-white">{propuestaIA.titulo} — <span className="text-emerald-400">{Number(propuestaIA.descuento) > 0 ? `${propuestaIA.descuento}% OFF` : 'Precio de lista'}</span></h4>
                 <p className="text-xs text-slate-300 leading-relaxed italic">"{propuestaIA.descripcion}"</p>
               </div>
               <button 
@@ -197,7 +198,7 @@ export default function TabPromos() {
                     <span className="font-black text-white uppercase block">{b.titulo}</span>
                     <span className="text-[11px] text-slate-400 mt-0.5 block max-w-xs truncate">{b.descripcion}</span>
                   </td>
-                  <td className="px-6 py-4 text-emerald-400 font-black font-mono">{b.descuento}% OFF</td>
+                  <td className="px-6 py-4 text-emerald-400 font-black font-mono">{Number(b.descuento) > 0 ? `${b.descuento}% OFF` : 'Precio de lista'}</td>
                   <td className="px-6 py-4 text-[10px] font-mono text-slate-400">
                     <div>INICIO: {b.fecha_inicio ? b.fecha_inicio.substring(0, 10) : 'S/D'}</div>
                     <div className="mt-0.5">FINAL: {b.fecha_fin ? b.fecha_fin.substring(0, 10) : 'S/D'}</div>

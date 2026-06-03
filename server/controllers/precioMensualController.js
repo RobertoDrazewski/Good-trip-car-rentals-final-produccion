@@ -21,7 +21,8 @@ const limpiarEnteros = (obj) => {
 const CAMPOS_GLOBALES_PERMITIDOS = [
     'cotizacion_dolar', 'garantia_ars', 'garantia_usd',
     'precio_sillita', 'cargo_retiro_aeropuerto',
-    'cargo_devolucion_aeropuerto', 'precio_lavado'
+    'cargo_devolucion_aeropuerto', 'precio_lavado',
+    'recargo_tarjeta_1', 'recargo_tarjeta_3', 'recargo_tarjeta_6'
 ];
 
 /**
@@ -34,7 +35,8 @@ exports.saveOrUpdatePreciosMensuales = async (req, res) => {
     const {
         mes, anio, auto_id, precio_auto_mensual_ars,
         precio_sillita, garantia_ars, garantia_usd, cotizacion_dolar,
-        cargo_retiro_aeropuerto, cargo_devolucion_aeropuerto, precio_lavado
+        cargo_retiro_aeropuerto, cargo_devolucion_aeropuerto, precio_lavado,
+        recargo_tarjeta_1, recargo_tarjeta_3, recargo_tarjeta_6
     } = req.body;
 
     if (!mes || !anio || !auto_id) {
@@ -57,6 +59,9 @@ exports.saveOrUpdatePreciosMensuales = async (req, res) => {
     const retAero    = cargo_retiro_aeropuerto   ?? g.cargo_retiro_aeropuerto   ?? 0;
     const devAero    = cargo_devolucion_aeropuerto ?? g.cargo_devolucion_aeropuerto ?? 0;
     const lavado     = precio_lavado             ?? g.precio_lavado             ?? 0;
+    const recT1      = recargo_tarjeta_1         ?? g.recargo_tarjeta_1         ?? 8;
+    const recT3      = recargo_tarjeta_3         ?? g.recargo_tarjeta_3         ?? 16;
+    const recT6      = recargo_tarjeta_6         ?? g.recargo_tarjeta_6         ?? 32;
     const precio     = Number(precio_auto_mensual_ars) || 0;
 
     try {
@@ -65,11 +70,12 @@ exports.saveOrUpdatePreciosMensuales = async (req, res) => {
              (auto_id, mes, anio,
               precio_sillita, garantia_ars, garantia_usd, cotizacion_dolar,
               cargo_retiro_aeropuerto, cargo_devolucion_aeropuerto, precio_lavado,
+              recargo_tarjeta_1, recargo_tarjeta_3, recargo_tarjeta_6,
               precio_auto_mensual_ars)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                precio_auto_mensual_ars = VALUES(precio_auto_mensual_ars)`,
-            [auto_id, mes, anio, sillita, garArs, garUsd, cotDolar, retAero, devAero, lavado, precio]
+            [auto_id, mes, anio, sillita, garArs, garUsd, cotDolar, retAero, devAero, lavado, recT1, recT3, recT6, precio]
         );
 
         // Sincronizar precio base en tabla cars
@@ -124,7 +130,8 @@ exports.updateGlobalTarifas = async (req, res) => {
                 const insertValues = {
                     cotizacion_dolar: 0, garantia_ars: 0, garantia_usd: 0,
                     precio_sillita: 0, cargo_retiro_aeropuerto: 0,
-                    cargo_devolucion_aeropuerto: 0, precio_lavado: 0
+                    cargo_devolucion_aeropuerto: 0, precio_lavado: 0,
+                    recargo_tarjeta_1: 8, recargo_tarjeta_3: 16, recargo_tarjeta_6: 32
                 };
                 insertValues[campo] = Number(valor);
 
@@ -133,8 +140,9 @@ exports.updateGlobalTarifas = async (req, res) => {
                      (auto_id, mes, anio,
                       precio_sillita, garantia_ars, garantia_usd, cotizacion_dolar,
                       cargo_retiro_aeropuerto, cargo_devolucion_aeropuerto, precio_lavado,
+                      recargo_tarjeta_1, recargo_tarjeta_3, recargo_tarjeta_6,
                       precio_auto_mensual_ars)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
                      ON DUPLICATE KEY UPDATE \`${campo}\` = VALUES(\`${campo}\`)`,
                     [
                         auto.id, mes, anio,
@@ -144,7 +152,10 @@ exports.updateGlobalTarifas = async (req, res) => {
                         insertValues.cotizacion_dolar,
                         insertValues.cargo_retiro_aeropuerto,
                         insertValues.cargo_devolucion_aeropuerto,
-                        insertValues.precio_lavado
+                        insertValues.precio_lavado,
+                        insertValues.recargo_tarjeta_1,
+                        insertValues.recargo_tarjeta_3,
+                        insertValues.recargo_tarjeta_6
                     ]
                 );
             }

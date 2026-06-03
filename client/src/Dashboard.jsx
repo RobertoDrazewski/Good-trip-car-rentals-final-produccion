@@ -16,13 +16,19 @@ import TabAutos      from './TabAutos';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+// Mes en curso para la facturación mensual
+const MESES_NOM = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const _NOW = new Date();
+const NOMBRE_MES_ACTUAL = MESES_NOM[_NOW.getMonth()];
+const CLAVE_MES_ACTUAL  = `${_NOW.getFullYear()}-${String(_NOW.getMonth() + 1).padStart(2, '0')}`;
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [tab,       setTab]       = useState('ventas');
   const [sidebar,   setSidebar]   = useState(true);
   const [loading,   setLoading]   = useState(true);
   const [reservas,  setReservas]  = useState([]);
-  const [metrics,   setMetrics]   = useState({ total:0, pendientes:0, confirmadas:0, ingresos:0 });
+  const [metrics,   setMetrics]   = useState({ total:0, pendientes:0, confirmadas:0, ingresos:0, ingresosMes:0 });
   const [leadAlert, setLeadAlert] = useState(false);
   const [recentLead,setRecentLead]= useState({ name:'', phone:'', modelo:'', id:0 });
   const maxId = useRef(0);
@@ -39,7 +45,13 @@ export default function Dashboard() {
       const pend = rows.filter(r => String(r.estado_reserva||'pendiente').toLowerCase() === 'pendiente').length;
       const conf = rows.filter(r => ['confirmada','confirmado','contratado'].includes(String(r.estado_reserva||'').toLowerCase())).length;
       const ing  = rows.reduce((s,r) => s + parseFloat(r.monto_total_ars||0), 0);
-      setMetrics({ total:rows.length, pendientes:pend, confirmadas:conf, ingresos:ing });
+      // Facturación del mes en curso y SOLO de reservas confirmadas (por fecha de retiro)
+      const ingMes = rows.reduce((s,r) => (
+        ['confirmada','confirmado','contratado'].includes(String(r.estado_reserva||'').toLowerCase())
+        && String(r.fecha_inicio||'').slice(0,7) === CLAVE_MES_ACTUAL
+          ? s + parseFloat(r.monto_total_ars||0) : s
+      ), 0);
+      setMetrics({ total:rows.length, pendientes:pend, confirmadas:conf, ingresos:ing, ingresosMes:ingMes });
 
       if (rows.length > 0) {
         const curMax = Math.max(...rows.map(r => r.id||0));
@@ -219,7 +231,7 @@ export default function Dashboard() {
                 { label:'Total Leads',    val:metrics.total,                              color:'text-[#88BDF2]',  icon:<Users size={18}/> },
                 { label:'Pendientes',     val:metrics.pendientes,                         color:'text-amber-400',  icon:<ShieldAlert size={18}/> },
                 { label:'Confirmadas',    val:metrics.confirmadas,                        color:'text-emerald-400',icon:<Calendar size={18}/> },
-                { label:'Facturación',    val:`$${Math.round(metrics.ingresos/1000)}K`,   color:'text-[#88BDF2]',  icon:<DollarSign size={18}/> },
+                { label:`Facturación ${NOMBRE_MES_ACTUAL}`, val:`$${Math.round(metrics.ingresosMes).toLocaleString('es-AR')}`, color:'text-[#88BDF2]',  icon:<DollarSign size={18}/> },
               ].map(k => (
                 <div key={k.label} className="bg-[#1E222F] border border-slate-800/60 p-4 rounded-2xl flex items-center justify-between">
                   <div>

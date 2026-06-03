@@ -17,12 +17,22 @@ const HORAS = [];
 for (let h=0;h<24;h++) for(let m=0;m<60;m+=30) HORAS.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
 const HOY = new Date().toISOString().split('T')[0];
 
-// Regla de 6 horas: si sobran más de 6h del día se cobra 1 día más
+// Regla de días (solicitada por el cliente):
+//   24h               = 1 día
+//   24h + hasta 3:30h = 1 día      (resto ≤ 3,5h → +0)
+//   24h + 4:00 a 7:30 = 1,5 días   (resto 4h a 7,5h → +0,5)
+//   24h + 8:00h o más = 2 días     (resto ≥ 8h → +1)
 const calcDias = (d1,h1,d2,h2) => {
   const ini = new Date(`${d1}T${h1}:00`);
   const fin = new Date(`${d2}T${h2}:00`);
-  const diffH = Math.max(0,(fin-ini)/3_600_000);
-  return Math.max(1, Math.floor(diffH/24) + (diffH%24 > 6 ? 1 : 0));
+  // Redondeamos a medias horas para evitar errores de coma flotante
+  const diffH = Math.max(0, Math.round((fin-ini)/3_600_000 * 2) / 2);
+  const full  = Math.floor(diffH / 24);
+  const resto = diffH - full * 24;
+  let extra = 0;
+  if (resto >= 8)      extra = 1;
+  else if (resto > 3.5) extra = 0.5;
+  return Math.max(1, full + extra);
 };
 const esMendoza = w => { const t=String(w||'').replace(/\D/g,''); return t.startsWith('261')||t.startsWith('54261'); };
 
@@ -81,11 +91,14 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuote
   }, [form.auto_id,form.desde,form.hasta,reservas]);
 
   const dias = calcDias(form.desde,form.hora_inicio,form.hasta,form.hora_fin);
-  const recargo = {tarjeta_1:'+8%',tarjeta_3:'+16%',tarjeta_6:'+32%'}[form.metodo_pago]||'Sin recargo';
+  // Texto en es-AR: entero "3" o medio día "2,5"
+  const diasTexto = Number.isInteger(dias) ? String(dias) : dias.toFixed(1).replace('.', ',');
+  // Alquiler mínimo de 3 días
+  const cumpleMinimo = dias >= 3;
 
   const handleSubmit = async e => {
     e.preventDefault();
-    if (ocupado || !form.auto_id) return;
+    if (ocupado || !form.auto_id || !cumpleMinimo) return;
     setLoading(true);
     try {
       const aid = parseInt(form.auto_id,10);
@@ -107,8 +120,10 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuote
       const cRetiro      = parseFloat(tarifa.cargo_retiro_aeropuerto || 16000);
       const cDevol       = parseFloat(tarifa.cargo_devolucion_aeropuerto||16000);
       const garantiaUsd  = parseFloat(tarifa.garantia_usd            || 400);
-      const garantiaArs  = parseFloat(tarifa.garantia_ars            || 580000);
       const cotizacion   = parseFloat(tarifa.cotizacion_dolar        || 1450);
+      // ⚠️ La garantía en ARS se calcula SIEMPRE como USD × cotización.
+      // Antes tomaba un campo guardado aparte y daba desfasajes (400×1400 mostraba 450.000 en vez de 560.000).
+      const garantiaArs  = garantiaUsd * cotizacion;
 
       const rentaBase    = precioDia * dias;
       const costoSillita = form.sillita ? precSillita : 0;
@@ -116,7 +131,13 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuote
       const costoDevol   = form.devolucion.toLowerCase().includes('aeropuerto') ? cDevol  : 0;
       const costoLavado  = precLavado;
       const subtotal     = rentaBase + costoSillita + costoRetiro + costoDevol + costoLavado;
-      const factor       = form.metodo_pago==='tarjeta_1'?1.08:form.metodo_pago==='tarjeta_3'?1.16:form.metodo_pago==='tarjeta_6'?1.32:1;
+      // Recargos por cuotas leídos del panel (tarifa del mes); si no existen, usa 8/16/32 como antes
+      const recT1        = parseFloat(tarifa.recargo_tarjeta_1 ?? 8);
+      const recT3        = parseFloat(tarifa.recargo_tarjeta_3 ?? 16);
+      const recT6        = parseFloat(tarifa.recargo_tarjeta_6 ?? 32);
+      const factor       = form.metodo_pago==='tarjeta_1' ? 1 + recT1/100
+                         : form.metodo_pago==='tarjeta_3' ? 1 + recT3/100
+                         : form.metodo_pago==='tarjeta_6' ? 1 + recT6/100 : 1;
       const total        = subtotal * factor;
 
       onQuoteGenerated({
@@ -177,6 +198,24 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuote
           )}
         </div>
 
+        {/* ── FECHAS Y HORARIOS (ARRIBA, antes de elegir el auto) ── */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div><label className={lbl}>Retiro</label><input type="date" name="desde" min={HOY} required value={form.desde} onChange={onChangeDesde} onClick={abrirCalendario} className={`${inp} cursor-pointer`}/></div>
+          <div><label className={lbl}>Hora Retiro</label><select name="hora_inicio" value={form.hora_inicio} onChange={set} className={inp}>{HORAS.map(h=><option key={h} value={h}>{h}</option>)}</select></div>
+          <div><label className={lbl}>Devolución</label><input type="date" name="hasta" min={form.desde} required value={form.hasta} onChange={set} onClick={abrirCalendario} className={`${inp} cursor-pointer`}/></div>
+          <div><label className={lbl}>Hora Devol.</label><select name="hora_fin" value={form.hora_fin} onChange={set} className={inp}>{HORAS.map(h=><option key={h} value={h}>{h}</option>)}</select></div>
+        </div>
+
+        <div className="bg-[#88BDF2]/10 border border-[#88BDF2]/20 rounded-xl px-4 py-2.5 text-xs font-bold text-[#88BDF2] flex items-center gap-2">
+          <Calendar size={13}/> {diasTexto} día{dias===1?'':'s'} de alquiler
+        </div>
+
+        {!cumpleMinimo && (
+          <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl px-4 py-2.5 text-xs font-bold text-rose-300 flex items-center gap-2">
+            <AlertTriangle size={13}/> El alquiler mínimo es de 3 días. Ajustá las fechas para poder cotizar.
+          </div>
+        )}
+
         {/* SELECTOR DE VEHÍCULO CON MINIATURA */}
         <div>
           <label className={lbl}>Vehículo</label>
@@ -231,18 +270,6 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuote
           </div>
         )}
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div><label className={lbl}>Retiro</label><input type="date" name="desde" min={HOY} required value={form.desde} onChange={onChangeDesde} onClick={abrirCalendario} className={`${inp} cursor-pointer`}/></div>
-          <div><label className={lbl}>Hora Retiro</label><select name="hora_inicio" value={form.hora_inicio} onChange={set} className={inp}>{HORAS.map(h=><option key={h} value={h}>{h}</option>)}</select></div>
-          <div><label className={lbl}>Devolución</label><input type="date" name="hasta" min={form.desde} required value={form.hasta} onChange={set} onClick={abrirCalendario} className={`${inp} cursor-pointer`}/></div>
-          <div><label className={lbl}>Hora Devol.</label><select name="hora_fin" value={form.hora_fin} onChange={set} className={inp}>{HORAS.map(h=><option key={h} value={h}>{h}</option>)}</select></div>
-        </div>
-
-        <div className="bg-[#88BDF2]/10 border border-[#88BDF2]/20 rounded-xl px-4 py-2.5 text-xs font-bold text-[#88BDF2] flex items-center gap-2">
-          <Calendar size={13}/> {dias} día{dias!==1?'s':''} de alquiler
-          <span className="text-slate-500 font-normal ml-1">(+1 día si superás 6h)</span>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className={lbl}>Lugar de Retiro</label>
@@ -269,15 +296,14 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuote
             <label className={lbl}>Método de Pago</label>
             <select name="metodo_pago" value={form.metodo_pago} onChange={set} className="w-full bg-[#1E222F] border border-slate-700 rounded-xl px-4 py-3 text-sm outline-none text-white">
               <option value="efectivo">Efectivo / Transferencia / Débito</option>
-              <option value="tarjeta_1">Tarjeta Crédito — 1 Pago (+8%)</option>
-              <option value="tarjeta_3">Tarjeta Crédito — 3 Cuotas (+16%)</option>
-              <option value="tarjeta_6">Tarjeta Crédito — 6 Cuotas (+32%)</option>
+              <option value="tarjeta_1">Tarjeta Crédito — 1 Pago</option>
+              <option value="tarjeta_3">Tarjeta Crédito — 3 Cuotas</option>
+              <option value="tarjeta_6">Tarjeta Crédito — 6 Cuotas</option>
             </select>
-            <p className="text-[10px] text-slate-400 mt-1.5 ml-1 flex items-center gap-1"><Info size={10} className="text-[#88BDF2]"/> {recargo}</p>
           </div>
         </div>
 
-        <button type="submit" disabled={loading||!!ocupado||!form.auto_id}
+        <button type="submit" disabled={loading||!!ocupado||!form.auto_id||!cumpleMinimo}
           className="w-full bg-[#88BDF2] text-[#121319] font-black uppercase text-sm py-4 rounded-xl hover:bg-white transition-all disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed flex items-center justify-center gap-2">
           {loading?<Loader2 className="animate-spin" size={20}/>:'CALCULAR Y COTIZAR'}
         </button>

@@ -17,7 +17,8 @@ export default function QuoteResult({ quote, onClose }) {
   if (!quote || !quote.enviado) return null;
 
   // ── Sanitizar valores ────────────────────────────────────────────
-  const dias        = Math.max(1, parseInt(quote.dias,10)||1);
+  const dias        = Math.max(1, parseFloat(quote.dias)||1);
+  const diasTexto   = Number.isInteger(dias) ? String(dias) : dias.toFixed(1).replace('.', ',');
   const precioDia   = parseFloat(quote.precio_renta_mes_ars||0);
   const rentaBase   = precioDia * dias;
   const costoRetiro = parseFloat(quote.costo_retiro_aero||0);
@@ -26,13 +27,14 @@ export default function QuoteResult({ quote, onClose }) {
   const costoLavado = parseFloat(quote.costo_lavado||0);
   const montoTotal  = parseFloat(quote.monto_total_ars||0);
   const garantiaUsd = parseFloat(quote.garantia_usd||400);
-  const garantiaArs = parseFloat(quote.garantia_ars||(garantiaUsd*1450));
   const cotizacion  = parseFloat(quote.cotizacion||1450);
+  // Garantía en ARS = USD × cotización (consistente con el panel de control)
+  const garantiaArs = garantiaUsd * cotizacion;
 
-  const factorTexto = quote.metodo_pago==='tarjeta_1' ? 'Tarjeta 1 pago (+8%)'
-                    : quote.metodo_pago==='tarjeta_3' ? 'Tarjeta 3 cuotas (+16%)'
-                    : quote.metodo_pago==='tarjeta_6' ? 'Tarjeta 6 cuotas (+32%)'
-                    : 'Efectivo / Débito';
+  const factorTexto = quote.metodo_pago==='tarjeta_1' ? 'Tarjeta crédito — 1 pago'
+                    : quote.metodo_pago==='tarjeta_3' ? 'Tarjeta crédito — 3 cuotas'
+                    : quote.metodo_pago==='tarjeta_6' ? 'Tarjeta crédito — 6 cuotas'
+                    : 'Efectivo / Transferencia / Débito';
 
   const recargo = montoTotal - (rentaBase + costoRetiro + costoDevol + costoSillita + costoLavado);
 
@@ -58,14 +60,13 @@ export default function QuoteResult({ quote, onClose }) {
     <div class="row"><span>Origen</span><span>${quote.origen||'Argentina'}${quote.provincia?' · '+quote.provincia:''}</span></div>
     <div class="row"><span>Retiro</span><span>${quote.desde} ${quote.hora_inicio}hs · ${quote.entrega}</span></div>
     <div class="row"><span>Devolución</span><span>${quote.hasta} ${quote.hora_fin}hs · ${quote.devolucion}</span></div>
-    <div class="row"><span>Días</span><span>${dias}</span></div>
-    <div class="row"><span>Renta (${dias}d × $${Math.round(precioDia).toLocaleString('es-AR')})</span><span>$${Math.round(rentaBase).toLocaleString('es-AR')}</span></div>
+    <div class="row"><span>Días</span><span>${diasTexto}</span></div>
+    <div class="row"><span>Renta (${diasTexto}d × $${Math.round(precioDia).toLocaleString('es-AR')})</span><span>$${Math.round(rentaBase).toLocaleString('es-AR')}</span></div>
     ${costoRetiro>0?`<div class="row"><span>Retiro Aeropuerto</span><span>$${Math.round(costoRetiro).toLocaleString('es-AR')}</span></div>`:''}
     ${costoDevol>0?`<div class="row"><span>Devolución Aeropuerto</span><span>$${Math.round(costoDevol).toLocaleString('es-AR')}</span></div>`:''}
     ${costoSillita>0?`<div class="row"><span>Sillita Bebé</span><span>$${Math.round(costoSillita).toLocaleString('es-AR')}</span></div>`:''}
     <div class="row"><span>Lavado</span><span>$${Math.round(costoLavado).toLocaleString('es-AR')}</span></div>
     <div class="row"><span>Método de pago</span><span>${factorTexto}</span></div>
-    ${recargo>50?`<div class="row"><span>Recargo financiero</span><span>$${Math.round(recargo).toLocaleString('es-AR')}</span></div>`:''}
     <div class="total"><span>TOTAL ESTIMADO</span><span>ARS $${Math.round(montoTotal).toLocaleString('es-AR')}</span></div>
     <div class="row" style="margin-top:16px"><span>Garantía</span><span>USD ${garantiaUsd} (≈ $${Math.round(garantiaArs).toLocaleString('es-AR')} ARS)</span></div>
     <div class="footer">Cotización estimada, no contractual. Buenos vientos 🌬️</div>
@@ -81,12 +82,12 @@ export default function QuoteResult({ quote, onClose }) {
     const msg = encodeURIComponent(
       `Hola ${quote.cliente_nombre}! 👋 Tu presupuesto Good Trip Nº${nro} está listo:\n\n` +
       `🚗 ${quote.auto_modelo}\n` +
-      `📅 ${quote.desde} → ${quote.hasta} (${dias} días)\n` +
+      `📅 ${quote.desde} → ${quote.hasta} (${diasTexto} días)\n` +
       `📍 Retiro: ${quote.entrega}\n` +
       `📍 Devolución: ${quote.devolucion}\n\n` +
       `💰 Total: ARS $${Math.round(montoTotal).toLocaleString('es-AR')}\n` +
       `🛡️ Garantía: USD ${garantiaUsd}\n\n` +
-      `Requisitos: mayor de 21 años, licencia vigente y tarjeta de crédito para la garantía.\n¡Muchas gracias! 🙌`
+      `Requisitos: mayor de 21 años, licencia vigente y garantía (efectivo, transferencia o dólares).\n¡Muchas gracias! 🙌`
     );
     window.open(`https://wa.me/${fmt}?text=${msg}`, '_blank');
   };
@@ -221,9 +222,9 @@ export default function QuoteResult({ quote, onClose }) {
               <ShieldCheck size={11}/> Garantía / Franquicia
             </p>
             <p className="text-slate-300 leading-relaxed">
-              Bloqueo en tarjeta por <strong className="text-white">USD {garantiaUsd}</strong>
+              Garantía de <strong className="text-white">USD {garantiaUsd}</strong>
               {' '}(≈ ${Math.round(garantiaArs).toLocaleString('es-AR')} ARS al cambio de ${cotizacion.toLocaleString('es-AR')}).
-              Se libera al devolver el vehículo en igual condición.
+              Se entrega en efectivo, transferencia o dólares y se reintegra al devolver el vehículo en igual condición.
             </p>
           </div>
 
@@ -242,7 +243,7 @@ export default function QuoteResult({ quote, onClose }) {
 
           <div className="bg-[#121319]/50 p-5 rounded-xl border border-slate-800 space-y-2.5 font-mono text-xs">
             <div className="flex justify-between text-slate-400">
-              <span>Renta Base ({dias}d × ${Math.round(precioDia).toLocaleString('es-AR')}):</span>
+              <span>Renta Base ({diasTexto}d × ${Math.round(precioDia).toLocaleString('es-AR')}):</span>
               <span className="text-white font-bold">${Math.round(rentaBase).toLocaleString('es-AR')}</span>
             </div>
             {costoRetiro>0&&(
@@ -267,12 +268,6 @@ export default function QuoteResult({ quote, onClose }) {
               <span>Lavado e Higiene:</span>
               <span className="text-white font-bold">${Math.round(costoLavado).toLocaleString('es-AR')}</span>
             </div>
-            {recargo>50&&(
-              <div className="flex justify-between text-amber-400">
-                <span>Recargo ({factorTexto}):</span>
-                <span className="font-bold">${Math.round(recargo).toLocaleString('es-AR')}</span>
-              </div>
-            )}
             <div className="pt-2 flex flex-col gap-1">
               <div className="flex justify-between items-end">
                 <span className="text-[9px] text-slate-500 font-sans uppercase tracking-widest font-black">Total Estimado</span>
@@ -285,7 +280,7 @@ export default function QuoteResult({ quote, onClose }) {
               <label className="flex items-start gap-2 bg-[#1E222F] border border-slate-800 p-3 rounded-xl cursor-pointer hover:border-slate-600 transition-colors">
                 <input type="checkbox" className="mt-0.5 accent-[#88BDF2]" checked={leido} onChange={e=>setLeido(e.target.checked)}/>
                 <span className="text-[10px] text-slate-400 leading-tight">
-                  Acepto los <span className="text-[#88BDF2] font-bold underline">Requisitos</span>: mayor de 21 años, licencia vigente y tarjeta de crédito para la garantía.
+                  Acepto los <span className="text-[#88BDF2] font-bold underline">Requisitos</span>: mayor de 21 años, licencia vigente y garantía (efectivo, transferencia o dólares).
                 </span>
               </label>
 

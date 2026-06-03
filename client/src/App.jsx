@@ -28,6 +28,12 @@ import './App.css';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+// Mes en curso (para la facturación mensual). Se recalcula al cargar, nunca queda viejo.
+const MESES_NOM = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const _NOW = new Date();
+const NOMBRE_MES_ACTUAL = MESES_NOM[_NOW.getMonth()];
+const CLAVE_MES_ACTUAL  = `${_NOW.getFullYear()}-${String(_NOW.getMonth() + 1).padStart(2, '0')}`; // ej "2026-06"
+
 // ─────────────────────────────────────────────────────────────────
 // APP ROOT
 // ─────────────────────────────────────────────────────────────────
@@ -131,6 +137,12 @@ function AdminLayout({ onLogout }) {
   const pendientes  = reservas.filter(r => String(r.estado_reserva || 'pendiente').toLowerCase() === 'pendiente').length;
   const confirmadas = reservas.filter(r => ['confirmada','confirmado','contratado'].includes(String(r.estado_reserva || '').toLowerCase())).length;
   const ingresos    = reservas.reduce((s, r) => s + parseFloat(r.monto_total_ars || 0), 0);
+  // Facturación SOLO del mes en curso y SOLO de reservas confirmadas (por fecha de retiro).
+  const esConfirmada = (r) => ['confirmada','confirmado','contratado'].includes(String(r.estado_reserva || '').toLowerCase());
+  const ingresosMes = reservas.reduce(
+    (s, r) => (esConfirmada(r) && String(r.fecha_inicio || '').slice(0, 7) === CLAVE_MES_ACTUAL ? s + parseFloat(r.monto_total_ars || 0) : s),
+    0
+  );
 
   // ── Acciones ──────────────────────────────────────────────────
   const cambiarEstadoReserva = async (id, estado) => {
@@ -272,7 +284,7 @@ function AdminLayout({ onLogout }) {
         <div className="grid grid-cols-2 gap-2 mb-3 shrink-0">
           {[
             { label:'Pendientes', val: pendientes,                          color:'text-amber-400' },
-            { label:'Facturación',val:`$${Math.round(ingresos/1000)}K ARS`, color:'text-[#88BDF2]' },
+            { label:`Fact. ${NOMBRE_MES_ACTUAL}`, val:`$${Math.round(ingresosMes).toLocaleString('es-AR')}`, color:'text-[#88BDF2]' },
           ].map(k => (
             <div key={k.label} className="bg-[#121319] rounded-xl p-2.5 border border-slate-800/40 text-center">
               <p className={`text-base font-black ${k.color}`}>{k.val}</p>

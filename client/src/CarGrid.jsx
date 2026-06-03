@@ -11,9 +11,17 @@ import { useTranslation } from 'react-i18next';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+// Mes/año actuales — se recalculan en vivo, nunca quedan viejos
+const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+const _ahora = new Date();
+const MES_ACTUAL  = _ahora.getMonth() + 1;
+const ANIO_ACTUAL = _ahora.getFullYear();
+const NOMBRE_MES_ACTUAL = MESES[MES_ACTUAL - 1];
+
 export default function CarGrid() {
   const { t } = useTranslation();
   const [autos, setAutos] = useState([]);
+  const [precios, setPrecios] = useState([]); // tarifas mensuales para tomar el precio del mes en curso
   const [loading, setLoading] = useState(true);
 
   // Diccionario para traducir IDs de íconos a textos estéticos legibles
@@ -36,11 +44,15 @@ export default function CarGrid() {
   useEffect(() => {
     const fetchAutosPublicos = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/api/cars`); 
-        const disponibles = (res.data || []).filter(
+        const [resAutos, resPrecios] = await Promise.all([
+          axios.get(`${API_BASE_URL}/api/cars`),
+          axios.get(`${API_BASE_URL}/api/precios-mensuales`).catch(() => ({ data: [] })),
+        ]);
+        const disponibles = (resAutos.data || []).filter(
           a => a.estado?.toLowerCase() === 'disponible' || a.estado === 'Disponible'
         );
         setAutos(disponibles);
+        setPrecios(Array.isArray(resPrecios.data) ? resPrecios.data : []);
       } catch (err) { 
         console.error("❌ Error cargando el catálogo:", err.message); 
       } finally { 
@@ -72,7 +84,16 @@ export default function CarGrid() {
     <div className="w-full max-w-7xl mx-auto px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {autos.map((a) => {
-          const precioFinal = parseFloat(a.precio_final_mes || a.prices_ars || 0);
+          // 📅 Precio del MES EN CURSO: buscamos la tarifa de este auto para el mes/año actual.
+          // Si no hay tarifa cargada para el mes, caemos al precio base del auto.
+          const tarifaMes = precios.find(
+            p => Number(p.auto_id) === Number(a.id)
+              && Number(p.mes)  === MES_ACTUAL
+              && Number(p.anio) === ANIO_ACTUAL
+          );
+          const precioFinal = parseFloat(
+            tarifaMes?.precio_auto_mensual_ars ?? a.precio_final_mes ?? a.prices_ars ?? 0
+          );
 
           // 🛡️ Extracción blindada ante la normalización destructiva del backend
           let caracteristicas = { puntaje_confort: 5, puntaje_seguridad: 5, puntaje_ficha: 5, iconos: {} };
@@ -164,14 +185,14 @@ export default function CarGrid() {
                        ${precioFinal.toLocaleString('es-AR')}
                      </p>
                      <span className="text-[9px] text-[#6F7D93] uppercase font-black block tracking-wider mt-0.5">
-                       Tarifa este mes
+                       Tarifa de {NOMBRE_MES_ACTUAL}
                      </span>
                    </div>
                    <button 
                       onClick={() => handleReservarAuto(a.id)}
                       className="px-5 py-3 bg-[#88BDF2] text-[#121319] font-black uppercase text-[10px] tracking-widest rounded-xl hover:bg-white transition-all transform active:scale-95 cursor-pointer shadow-lg"
                    >
-                      Alquilar
+                      Solicitá Presupuesto
                    </button>
                 </div>
               </div>
