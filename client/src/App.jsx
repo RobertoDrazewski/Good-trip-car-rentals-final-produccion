@@ -94,6 +94,37 @@ function AdminLayout({ onLogout }) {
   const [recentLead, setRecentLead] = useState({ id:0, name:'', phone:'', modelo:'' });
   const maxId = useRef(0);
   const first = useRef(true);
+  const audioRef = useRef(null);   // campanita de nuevo lead (/notify.mp3)
+
+  // ── Sonido de notificación ─────────────────────────────────────
+  // Los navegadores bloquean el audio automático hasta que el usuario
+  // interactúa con la página. Por eso "destrabamos" el sonido en el
+  // primer clic/tecla del operador, dejando el audio listo para sonar
+  // en cada lead siguiente sin intervención.
+  useEffect(() => {
+    const a = new Audio('/notify.mp3');
+    a.volume = 0.85;
+    a.preload = 'auto';
+    audioRef.current = a;
+
+    const destrabar = () => {
+      a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
+      window.removeEventListener('pointerdown', destrabar);
+      window.removeEventListener('keydown', destrabar);
+    };
+    window.addEventListener('pointerdown', destrabar);
+    window.addEventListener('keydown', destrabar);
+    return () => {
+      window.removeEventListener('pointerdown', destrabar);
+      window.removeEventListener('keydown', destrabar);
+    };
+  }, []);
+
+  const sonarCampanita = () => {
+    const a = audioRef.current;
+    if (!a) return;
+    try { a.currentTime = 0; a.play().catch(() => {}); } catch {}
+  };
 
   const auth = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
 
@@ -118,7 +149,7 @@ function AdminLayout({ onLogout }) {
             modelo: nl.modelo           || 'Auto',
           });
           setLeadAlert(true);
-          try { const a = new Audio('/alert-sound.mp3'); a.volume = 0.85; await a.play(); } catch {}
+          sonarCampanita();
           maxId.current = curMax;
         }
       }

@@ -33,6 +33,32 @@ export default function Dashboard() {
   const [recentLead,setRecentLead]= useState({ name:'', phone:'', modelo:'', id:0 });
   const maxId = useRef(0);
   const first = useRef(true);
+  const audioRef = useRef(null);   // campanita de nuevo lead (/notify.mp3)
+
+  // Destraba el sonido en el primer clic/tecla (los navegadores bloquean el audio automático)
+  useEffect(() => {
+    const a = new Audio('/notify.mp3');
+    a.volume = 0.85;
+    a.preload = 'auto';
+    audioRef.current = a;
+    const destrabar = () => {
+      a.play().then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
+      window.removeEventListener('pointerdown', destrabar);
+      window.removeEventListener('keydown', destrabar);
+    };
+    window.addEventListener('pointerdown', destrabar);
+    window.addEventListener('keydown', destrabar);
+    return () => {
+      window.removeEventListener('pointerdown', destrabar);
+      window.removeEventListener('keydown', destrabar);
+    };
+  }, []);
+
+  const sonarCampanita = () => {
+    const a = audioRef.current;
+    if (!a) return;
+    try { a.currentTime = 0; a.play().catch(() => {}); } catch {}
+  };
 
   const auth = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
 
@@ -67,7 +93,7 @@ export default function Dashboard() {
             modelo: nl.modelo          || 'Auto',
           });
           setLeadAlert(true);
-          try { const a=new Audio('/alert-sound.mp3'); a.volume=0.85; await a.play(); } catch {}
+          sonarCampanita();
           maxId.current = curMax;
         }
       }
