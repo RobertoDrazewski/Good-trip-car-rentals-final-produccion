@@ -12,7 +12,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const ANIO_ACTUAL = new Date().getFullYear();
 const ANIOS = Array.from({ length: 51 }, (_, i) => ANIO_ACTUAL + i);
 
-const EditableValue = ({ label, value, onSave, icon, prefix = '$', suffix = '' }) => {
+const EditableValue = ({ label, value, onSave, icon, prefix = '$', suffix = '', readOnly = false }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [val, setVal] = useState(value);
 
@@ -26,13 +26,19 @@ const EditableValue = ({ label, value, onSave, icon, prefix = '$', suffix = '' }
     }
   };
 
+  const display = `${prefix}${Math.floor(Number(value || 0)).toLocaleString('es-AR')}${suffix}`;
+
   return (
     <div className="bg-[#121319] p-4 rounded-2xl border border-slate-800/60 flex flex-col justify-center hover:border-slate-700 transition-colors">
       <div className="flex items-center gap-2 mb-1">
         {icon && <span className="text-[#88BDF2]">{icon}</span>}
         <p className="text-[10px] font-black uppercase text-[#6F7D93] tracking-widest">{label}</p>
       </div>
-      {isEditing ? (
+      {readOnly ? (
+        <div className="text-slate-300 font-mono font-bold text-lg opacity-90" title="Se calcula solo (no editable)">
+          {display}
+        </div>
+      ) : isEditing ? (
         <input 
           autoFocus type="number" value={val} 
           onChange={e => setVal(e.target.value)} 
@@ -42,7 +48,7 @@ const EditableValue = ({ label, value, onSave, icon, prefix = '$', suffix = '' }
         />
       ) : (
         <div onClick={() => setIsEditing(true)} className="cursor-pointer text-white font-mono font-bold text-lg hover:text-[#88BDF2]">
-          {prefix}{Math.floor(Number(value || 0)).toLocaleString('es-AR')}{suffix}
+          {display}
         </div>
       )}
     </div>
@@ -178,7 +184,8 @@ export default function TabTarifas() {
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <EditableValue label="Cotización Dólar" icon={<Wallet size={14}/>}       value={globalConfig.cotizacion_dolar}           onSave={v => handleUpdateGlobal('cotizacion_dolar', v)} />
-          <EditableValue label="Garantía ARS"     icon={<ShieldCheck size={14}/>}  value={globalConfig.garantia_ars}               onSave={v => handleUpdateGlobal('garantia_ars', v)} />
+          <EditableValue label="Garantía USD"      icon={<ShieldCheck size={14}/>}  prefix="USD " value={globalConfig.garantia_usd}    onSave={v => handleUpdateGlobal('garantia_usd', v)} />
+          <EditableValue label="Garantía ARS (auto)" icon={<ShieldCheck size={14}/>} readOnly value={Math.floor(Number(globalConfig.garantia_usd||0)) * Math.floor(Number(globalConfig.cotizacion_dolar||0))} />
           <EditableValue label="Precio Lavado"    icon={<Waves size={14}/>}        value={globalConfig.precio_lavado}              onSave={v => handleUpdateGlobal('precio_lavado', v)} />
           <EditableValue label="Sillita Bebé"     icon={<Baby size={14}/>}         value={globalConfig.precio_sillita}             onSave={v => handleUpdateGlobal('precio_sillita', v)} />
           <EditableValue label="Retiro Aero"      icon={<PlaneTakeoff size={14}/>} value={globalConfig.cargo_retiro_aeropuerto}    onSave={v => handleUpdateGlobal('cargo_retiro_aeropuerto', v)} />

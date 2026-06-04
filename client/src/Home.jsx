@@ -153,6 +153,7 @@ export default function Home() {
             autos={autos}
             tarifas={tarifas}
             reservas={reservas}
+            promos={promos}
             onQuoteGenerated={handleCalcularCotizacion}
           />
         </div>

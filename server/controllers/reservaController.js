@@ -72,6 +72,9 @@ const createReserva = async (req, res) => {
       const costoRet  = String(lugar_retiro||'').toLowerCase().includes('aeropuerto')    ? cRetiro : 0;
       const costoDevl = String(lugar_devolucion||'').toLowerCase().includes('aeropuerto') ? cDevol  : 0;
       const subtotal  = rentaBase + costoSil + costoRet + costoDevl + precLavado;
+      // Descuento por promoción (si el front lo informó)
+      const descPromo = parseFloat(req.body.descuento_promo || 0);
+      const subtotalNeto = subtotal * (1 - descPromo/100);
       // Recargos por cuotas desde el panel (tarifa del mes); fallback 8/16/32
       const recT1     = parseFloat(t.recargo_tarjeta_1 ?? 8);
       const recT3     = parseFloat(t.recargo_tarjeta_3 ?? 16);
@@ -79,7 +82,7 @@ const createReserva = async (req, res) => {
       const factor    = metodo_pago === 'tarjeta_1' ? 1 + recT1/100
                       : metodo_pago === 'tarjeta_3' ? 1 + recT3/100
                       : metodo_pago === 'tarjeta_6' ? 1 + recT6/100 : 1;
-      sqlMonto = subtotal * factor;
+      sqlMonto = subtotalNeto * factor;
     }
     sqlMonto = Math.round(sqlMonto);
 

@@ -36,7 +36,7 @@ const calcDias = (d1,h1,d2,h2) => {
 };
 const esMendoza = w => { const t=String(w||'').replace(/\D/g,''); return t.startsWith('261')||t.startsWith('54261'); };
 
-export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuoteGenerated }) {
+export default function BookingForm({ autos=[], tarifas=[], reservas=[], promos=[], onQuoteGenerated }) {
   const [loading, setLoading]         = useState(false);
   const [ocupado, setOcupado]         = useState(null);
   const [form, setForm] = useState({
@@ -131,6 +131,23 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuote
       const costoDevol   = form.devolucion.toLowerCase().includes('aeropuerto') ? cDevol  : 0;
       const costoLavado  = precLavado;
       const subtotal     = rentaBase + costoSillita + costoRetiro + costoDevol + costoLavado;
+
+      // Descuento por promoción activa (banner) vigente para la fecha de retiro.
+      // Toma el banner con mayor % cuya vigencia incluya 'form.desde'.
+      const promoAplicable = (promos || [])
+        .filter(p => {
+          const ini = p.fecha_inicio ? String(p.fecha_inicio).slice(0,10) : null;
+          const fin = p.fecha_fin    ? String(p.fecha_fin).slice(0,10)    : null;
+          const desdeOk = !ini || form.desde >= ini;
+          const hastaOk = !fin || form.desde <= fin;
+          return desdeOk && hastaOk && Number(p.descuento) > 0;
+        })
+        .sort((a,b) => Number(b.descuento) - Number(a.descuento))[0] || null;
+
+      const descPromo     = promoAplicable ? Number(promoAplicable.descuento) : 0;
+      const descuentoArs   = subtotal * (descPromo / 100);
+      const subtotalNeto   = subtotal - descuentoArs;
+
       // Recargos por cuotas leídos del panel (tarifa del mes); si no existen, usa 8/16/32 como antes
       const recT1        = parseFloat(tarifa.recargo_tarjeta_1 ?? 8);
       const recT3        = parseFloat(tarifa.recargo_tarjeta_3 ?? 16);
@@ -138,7 +155,7 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuote
       const factor       = form.metodo_pago==='tarjeta_1' ? 1 + recT1/100
                          : form.metodo_pago==='tarjeta_3' ? 1 + recT3/100
                          : form.metodo_pago==='tarjeta_6' ? 1 + recT6/100 : 1;
-      const total        = subtotal * factor;
+      const total        = subtotalNeto * factor;
 
       onQuoteGenerated({
         enviado:true,
@@ -148,6 +165,7 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], onQuote
         costo_retiro_aero:costoRetiro, costo_devolucion_aero:costoDevol,
         costo_sillita:costoSillita, costo_lavado:costoLavado,
         subtotal_neto:subtotal, monto_total_ars:total,
+        descuento_promo:descPromo, descuento_promo_ars:Math.round(descuentoArs), promo_titulo:promoAplicable?.titulo || '',
         garantia_usd:garantiaUsd, garantia_ars:garantiaArs,
         cotizacion, tasa_dolar_usada:cotizacion,
         esMendoza:esMendoza(form.cliente_whatsapp),

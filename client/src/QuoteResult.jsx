@@ -26,6 +26,9 @@ export default function QuoteResult({ quote, onClose }) {
   const costoSillita= parseFloat(quote.costo_sillita||0);
   const costoLavado = parseFloat(quote.costo_lavado||0);
   const montoTotal  = parseFloat(quote.monto_total_ars||0);
+  const descPromo   = parseFloat(quote.descuento_promo||0);
+  const descPromoArs= parseFloat(quote.descuento_promo_ars||0);
+  const promoTitulo = quote.promo_titulo || '';
   const garantiaUsd = parseFloat(quote.garantia_usd||400);
   const cotizacion  = parseFloat(quote.cotizacion||1450);
   // Garantía en ARS = USD × cotización (consistente con el panel de control)
@@ -66,6 +69,7 @@ export default function QuoteResult({ quote, onClose }) {
     ${costoDevol>0?`<div class="row"><span>Devolución Aeropuerto</span><span>$${Math.round(costoDevol).toLocaleString('es-AR')}</span></div>`:''}
     ${costoSillita>0?`<div class="row"><span>Sillita Bebé</span><span>$${Math.round(costoSillita).toLocaleString('es-AR')}</span></div>`:''}
     <div class="row"><span>Lavado</span><span>$${Math.round(costoLavado).toLocaleString('es-AR')}</span></div>
+    ${descPromo>0?`<div class="row"><span>Descuento ${promoTitulo||''} −${descPromo}%</span><span>−$${Math.round(descPromoArs).toLocaleString('es-AR')}</span></div>`:''}
     <div class="row"><span>Método de pago</span><span>${factorTexto}</span></div>
     <div class="total"><span>TOTAL ESTIMADO</span><span>ARS $${Math.round(montoTotal).toLocaleString('es-AR')}</span></div>
     <div class="row" style="margin-top:16px"><span>Garantía</span><span>USD ${garantiaUsd} (≈ $${Math.round(garantiaArs).toLocaleString('es-AR')} ARS)</span></div>
@@ -128,6 +132,7 @@ export default function QuoteResult({ quote, onClose }) {
         origen:           quote.origen||'Argentina',
         provincia:        quote.provincia||'',
         monto_total_ars:  Math.round(montoTotal),
+        descuento_promo:  descPromo,
         tasa_dolar_usada: cotizacion,
         garantia_usd:     garantiaUsd,
       };
@@ -268,6 +273,12 @@ export default function QuoteResult({ quote, onClose }) {
               <span>Lavado e Higiene:</span>
               <span className="text-white font-bold">${Math.round(costoLavado).toLocaleString('es-AR')}</span>
             </div>
+            {descPromo > 0 && (
+              <div className="flex justify-between text-emerald-400 font-bold pb-2 border-b border-slate-800/50">
+                <span>Descuento{promoTitulo ? ` (${promoTitulo})` : ''} −{descPromo}%:</span>
+                <span>−${Math.round(descPromoArs).toLocaleString('es-AR')}</span>
+              </div>
+            )}
             <div className="pt-2 flex flex-col gap-1">
               <div className="flex justify-between items-end">
                 <span className="text-[9px] text-slate-500 font-sans uppercase tracking-widest font-black">Total Estimado</span>
