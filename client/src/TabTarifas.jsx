@@ -4,6 +4,7 @@ import {
   Calendar, Loader2, Settings2, Car, Wallet, 
   ShieldCheck, Waves, Baby, PlaneTakeoff, PlaneLanding, CreditCard 
 } from 'lucide-react';
+import WidgetDolar from './WidgetDolar';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -161,6 +162,9 @@ export default function TabTarifas() {
 
   return (
     <div className="space-y-6">
+      {/* Widget de cotización USD (referencia + alarma de discrepancia) */}
+      <WidgetDolar cotizacionConfig={globalConfig.cotizacion_dolar} />
+
       {/* Selector de Fecha */}
       <div className="bg-[#1E222F]/60 p-6 rounded-[2rem] border border-white/10 flex flex-wrap gap-4 items-center justify-between">
         <div className="flex items-center gap-3">
