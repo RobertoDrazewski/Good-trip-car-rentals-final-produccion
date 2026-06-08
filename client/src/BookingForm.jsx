@@ -79,6 +79,14 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], promos=
   useEffect(() => {
     if (!form.auto_id||!form.desde||!form.hasta) { setOcupado(null); return; }
     const aid = parseInt(form.auto_id,10);
+
+    // 🔧 Si el auto está en taller / mantenimiento, lo tratamos como NO disponible:
+    // se muestra el MISMO cartel amber que cuando ya está reservado, invitando al
+    // cliente a elegir otro vehículo. Nunca se le revela que está "en mantenimiento".
+    const autoSel = autos.find(a => parseInt(a.id,10)===aid);
+    const enTaller = autoSel && !(autoSel.estado?.toLowerCase() === 'disponible' || autoSel.estado === 'Disponible');
+    if (enTaller) { setOcupado({ porMantenimiento: true }); return; }
+
     const r = reservas.find(r => {
       if (parseInt(r.auto_id,10)!==aid) return false;
       const est=String(r.estado_reserva||'').toLowerCase();
@@ -88,7 +96,7 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], promos=
       return !(form.hasta<ri||form.desde>rf);
     });
     setOcupado(r||null);
-  }, [form.auto_id,form.desde,form.hasta,reservas]);
+  }, [form.auto_id,form.desde,form.hasta,reservas,autos]);
 
   const dias = calcDias(form.desde,form.hora_inicio,form.hasta,form.hora_fin);
   // Texto en es-AR: entero "3" o medio día "2,5"
@@ -182,7 +190,9 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], promos=
   const inp='w-full bg-[#121319] border border-slate-800 rounded-xl px-4 py-3 text-sm focus:border-[#88BDF2] outline-none text-white';
   const lbl='text-[10px] uppercase text-slate-400 font-bold ml-1 mb-1 block';
 
-  const disponibles = autos.filter(a => a.estado?.toLowerCase() === 'disponible' || a.estado === 'Disponible');
+  // Mostramos TODOS los autos en el selector. Si el cliente elige uno que está
+  // en taller, el cartel amber (estado "ocupado") le pide elegir otro.
+  const disponibles = autos;
 
   return (
     <div className="w-full max-w-4xl mx-auto bg-[#1E222F] border border-slate-800 rounded-[2rem] p-8 shadow-2xl font-sans text-white">

@@ -37,10 +37,11 @@ export default function CarGrid() {
     const fetchAutosPublicos = async () => {
       try {
         const resAutos = await axios.get(`${API_BASE_URL}/api/cars`);
-        const disponibles = (resAutos.data || []).filter(
-          a => a.estado?.toLowerCase() === 'disponible' || a.estado === 'Disponible'
-        );
-        setAutos(disponibles);
+        // Mostramos TODOS los autos en la grilla (incluidos los que están en taller /
+        // mantenimiento). Los no disponibles se siguen viendo pero NO se pueden cotizar:
+        // el cliente nunca ve la palabra "mantenimiento", solo que ese auto no está
+        // disponible y debe elegir otro. Así la grilla nunca queda vacía.
+        setAutos(resAutos.data || []);
       } catch (err) { 
         console.error("❌ Error cargando el catálogo:", err.message); 
       } finally { 
