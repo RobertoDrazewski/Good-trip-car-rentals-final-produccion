@@ -148,7 +148,7 @@ export default function Home() {
       {/* BOOKING + REVIEWS */}
       <section id="reserva-y-opiniones"
         className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 lg:grid-cols-2 gap-8 items-start relative z-20">
-        <div className="w-full">
+        <div id="booking-section" className="w-full scroll-mt-24">
           <BookingForm
             autos={autos}
             tarifas={tarifas}

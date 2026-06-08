@@ -11,17 +11,9 @@ import { useTranslation } from 'react-i18next';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-// Mes/año actuales — se recalculan en vivo, nunca quedan viejos
-const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-const _ahora = new Date();
-const MES_ACTUAL  = _ahora.getMonth() + 1;
-const ANIO_ACTUAL = _ahora.getFullYear();
-const NOMBRE_MES_ACTUAL = MESES[MES_ACTUAL - 1];
-
 export default function CarGrid() {
   const { t } = useTranslation();
   const [autos, setAutos] = useState([]);
-  const [precios, setPrecios] = useState([]); // tarifas mensuales para tomar el precio del mes en curso
   const [loading, setLoading] = useState(true);
 
   // Diccionario para traducir IDs de íconos a textos estéticos legibles
@@ -44,15 +36,11 @@ export default function CarGrid() {
   useEffect(() => {
     const fetchAutosPublicos = async () => {
       try {
-        const [resAutos, resPrecios] = await Promise.all([
-          axios.get(`${API_BASE_URL}/api/cars`),
-          axios.get(`${API_BASE_URL}/api/precios-mensuales`).catch(() => ({ data: [] })),
-        ]);
+        const resAutos = await axios.get(`${API_BASE_URL}/api/cars`);
         const disponibles = (resAutos.data || []).filter(
           a => a.estado?.toLowerCase() === 'disponible' || a.estado === 'Disponible'
         );
         setAutos(disponibles);
-        setPrecios(Array.isArray(resPrecios.data) ? resPrecios.data : []);
       } catch (err) { 
         console.error("❌ Error cargando el catálogo:", err.message); 
       } finally { 
@@ -63,12 +51,26 @@ export default function CarGrid() {
   }, []);
 
   const handleReservarAuto = (modeloId) => {
-    const bookingSection = document.getElementById('booking-section') || document.getElementById('booking');
-    if (bookingSection) {
-      bookingSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    // 1) Avisamos al BookingForm qué auto eligió el cliente (lo deja pre-seleccionado)
     const eventoSeleccion = new CustomEvent('autoSeleccionarVehiculo', { detail: { autoId: modeloId } });
     window.dispatchEvent(eventoSeleccion);
+
+    // 2) Scroll hasta el formulario de reserva.
+    //    Antes buscaba 'booking-section'/'booking' (IDs inexistentes) y NUNCA scrolleaba.
+    //    Ahora apunta al contenedor real y descuenta la altura del NavBar fijo
+    //    para que en móvil el formulario quede visible y no tapado por la barra.
+    const destino =
+      document.getElementById('booking-section') ||
+      document.getElementById('reserva-y-opiniones');
+
+    if (destino) {
+      const OFFSET_NAVBAR = 90; // alto aprox. del NavBar fijo
+      // Pequeño delay para que React aplique la selección antes de mover la vista
+      setTimeout(() => {
+        const y = destino.getBoundingClientRect().top + window.pageYOffset - OFFSET_NAVBAR;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }, 80);
+    }
   };
 
   if (loading) {
@@ -84,16 +86,8 @@ export default function CarGrid() {
     <div className="w-full max-w-7xl mx-auto px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {autos.map((a) => {
-          // 📅 Precio del MES EN CURSO: buscamos la tarifa de este auto para el mes/año actual.
-          // Si no hay tarifa cargada para el mes, caemos al precio base del auto.
-          const tarifaMes = precios.find(
-            p => Number(p.auto_id) === Number(a.id)
-              && Number(p.mes)  === MES_ACTUAL
-              && Number(p.anio) === ANIO_ACTUAL
-          );
-          const precioFinal = parseFloat(
-            tarifaMes?.precio_auto_mensual_ars ?? a.precio_final_mes ?? a.prices_ars ?? 0
-          );
+          // El precio NO se muestra en la tarjeta (decisión del cliente).
+          // La tarifa se resuelve en el BookingForm según el mes solicitado.
 
           // 🛡️ Extracción blindada ante la normalización destructiva del backend
           let caracteristicas = { puntaje_confort: 5, puntaje_seguridad: 5, puntaje_ficha: 5, iconos: {} };
@@ -178,21 +172,17 @@ export default function CarGrid() {
                   )}
                 </div>
 
-                {/* Footer: Precio del Mes Directo */}
-                <div className="flex items-center justify-between pt-4 border-t border-slate-800/40">
-                   <div className="text-left">
-                     <p className="text-2xl font-black text-white italic font-mono">
-                       ${precioFinal.toLocaleString('es-AR')}
-                     </p>
-                     <span className="text-[9px] text-[#6F7D93] uppercase font-black block tracking-wider mt-0.5">
-                       Tarifa de {NOMBRE_MES_ACTUAL}
-                     </span>
-                   </div>
+                {/* Footer: SIN precio en la tarjeta.
+                    El cliente eligió que el precio NO se muestre acá (evitaba el
+                    "huevo o la gallina": la tarifa depende del mes que el cliente
+                    pida en la cotización). Acá solo se elige el auto; el precio
+                    real lo calcula el BookingForm según el mes solicitado. */}
+                <div className="pt-4 border-t border-slate-800/40">
                    <button 
                       onClick={() => handleReservarAuto(a.id)}
-                      className="px-5 py-3 bg-[#88BDF2] text-[#121319] font-black uppercase text-[10px] tracking-widest rounded-xl hover:bg-white transition-all transform active:scale-95 cursor-pointer shadow-lg"
+                      className="w-full px-5 py-3.5 bg-[#88BDF2] text-[#121319] font-black uppercase text-[11px] tracking-widest rounded-xl hover:bg-white transition-all transform active:scale-95 cursor-pointer shadow-lg"
                    >
-                      Solicitá Presupuesto
+                      Cotizar este vehículo
                    </button>
                 </div>
               </div>

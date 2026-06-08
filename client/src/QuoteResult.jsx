@@ -72,7 +72,8 @@ export default function QuoteResult({ quote, onClose }) {
     ${descPromo>0?`<div class="row"><span>Descuento ${promoTitulo||''} −${descPromo}%</span><span>−$${Math.round(descPromoArs).toLocaleString('es-AR')}</span></div>`:''}
     <div class="row"><span>Método de pago</span><span>${factorTexto}</span></div>
     <div class="total"><span>TOTAL ESTIMADO</span><span>ARS $${Math.round(montoTotal).toLocaleString('es-AR')}</span></div>
-    <div class="row" style="margin-top:16px"><span>Garantía</span><span>USD ${garantiaUsd} (≈ $${Math.round(garantiaArs).toLocaleString('es-AR')} ARS)</span></div>
+    <div class="row" style="margin-top:16px"><span>Garantía</span><span>USD ${garantiaUsd}</span></div>
+    <div style="font-size:10px;color:#666;margin-top:2px">o su equivalente en pesos argentinos, al tipo de cambio vendedor del BNA al momento de la entrega del auto.</div>
     <div class="footer">Cotización estimada, no contractual. Buenos vientos 🌬️</div>
     <script>window.print();</script>
     </body></html>`);
@@ -228,7 +229,7 @@ export default function QuoteResult({ quote, onClose }) {
             </p>
             <p className="text-slate-300 leading-relaxed">
               Garantía de <strong className="text-white">USD {garantiaUsd}</strong>
-              {' '}(≈ ${Math.round(garantiaArs).toLocaleString('es-AR')} ARS al cambio de ${cotizacion.toLocaleString('es-AR')}).
+              {' '}o su equivalente en pesos argentinos, al tipo de cambio vendedor del BNA al momento de la entrega del auto.
               Se entrega en efectivo, transferencia o dólares y se reintegra al devolver el vehículo en igual condición.
             </p>
           </div>

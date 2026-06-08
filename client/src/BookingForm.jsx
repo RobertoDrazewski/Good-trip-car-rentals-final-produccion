@@ -257,10 +257,11 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], promos=
                         <Cog size={9}/> {a.transmision}
                       </span>
                     </div>
-                    <p className="text-[#88BDF2] font-black font-mono text-sm mt-1">
-                      ${parseInt(a.prices_ars||0).toLocaleString('es-AR')}
-                      <span className="text-[9px] text-slate-500 font-normal"> /día</span>
-                    </p>
+                    {/* Sin precio fijo acá: la tarifa depende del mes solicitado.
+                        El precio real se calcula al cotizar, según las fechas elegidas. */}
+                    {selected && (
+                      <p className="text-[#88BDF2] font-black uppercase text-[10px] mt-1 tracking-wide">✓ Seleccionado</p>
+                    )}
                   </div>
                 </button>
               );
