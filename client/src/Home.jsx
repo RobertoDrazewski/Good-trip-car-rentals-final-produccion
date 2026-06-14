@@ -75,13 +75,9 @@ export default function Home() {
     }, 60);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#121319] flex items-center justify-center">
-        <Loader2 className="animate-spin text-[#88BDF2]" size={48}/>
-      </div>
-    );
-  }
+  // Nota: ya NO bloqueamos toda la página con un spinner. NavBar + Hero
+  // no dependen de datos, así que pintan al instante (mejor LCP / menos rebote
+  // desde ads). El estado `loading` se usa sólo dentro de la sección Flota.
 
   return (
     <div
@@ -143,6 +139,11 @@ export default function Home() {
           </h2>
         </div>
         <CarGrid autos={autos} tarifasGlobales={tarifas}/>
+        {loading && autos.length === 0 && (
+          <div className="flex justify-center py-10">
+            <Loader2 className="animate-spin text-[#88BDF2]" size={40}/>
+          </div>
+        )}
       </section>
 
       {/* BOOKING + REVIEWS */}

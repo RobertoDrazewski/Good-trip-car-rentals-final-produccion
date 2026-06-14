@@ -61,10 +61,10 @@ export default function Hero() {
             <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
           </a>
 
-          {/* CTA SECUNDARIO - RUTAS */}
+          {/* CTA SECUNDARIO - RUTAS (outline para no competir con el primario) */}
           <a
             href="#guias-rutas"
-            className="group inline-flex items-center gap-2.5 bg-[#88BDF2] text-[#121319] font-black uppercase tracking-widest text-xs sm:text-sm px-7 py-3.5 rounded-2xl shadow-[0_8px_30px_rgba(136,189,242,0.35)] hover:bg-white hover:scale-[1.03] active:scale-95 transition-all"
+            className="group inline-flex items-center gap-2.5 bg-transparent text-[#88BDF2] font-black uppercase tracking-widest text-xs sm:text-sm px-7 py-3.5 rounded-2xl border border-[#88BDF2]/40 hover:bg-[#88BDF2]/10 hover:border-[#88BDF2]/70 hover:scale-[1.03] active:scale-95 transition-all"
           >
             {t('hero_routes_cta', 'Ver Rutas Turísticas')}
             <Map size={16} className="group-hover:scale-110 transition-transform" />

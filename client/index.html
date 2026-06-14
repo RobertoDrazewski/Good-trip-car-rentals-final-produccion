@@ -13,6 +13,15 @@
       gtag('config', 'AW-11340751541');
     </script>
 
+    <!-- ============================================================
+         META PIXEL — DESACTIVADO temporalmente.
+         Para activarlo:
+           1) Descomentar este bloque y el <noscript> del <body>.
+           2) Reemplazar TU_PIXEL_ID por el ID real que pase el cliente.
+         Mientras está comentado NO rompe nada: safeFbq() en analytics.js
+         verifica que window.fbq exista antes de llamar, así que los
+         eventos (Lead / InitiateCheckout / Contact) simplemente no-opean.
+    =================================================================
     <script>
       !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
       n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
@@ -22,6 +31,7 @@
       fbq('init', 'TU_PIXEL_ID');
       fbq('track', 'PageView');
     </script>
+    ============================================================ -->
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -91,9 +101,11 @@
   </head>
   <body class="bg-white text-slate-900 antialiased">
     
+    <!-- META PIXEL noscript — descomentar junto con el bloque del <head> y poner el ID real
     <noscript>
       <img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=TU_PIXEL_ID&ev=PageView&noscript=1"/>
     </noscript>
+    -->
 
     <div id="root"></div>
 
