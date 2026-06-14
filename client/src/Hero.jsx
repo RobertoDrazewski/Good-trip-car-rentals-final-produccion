@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Star, ArrowRight, MapPin, Plane, ShieldCheck } from 'lucide-react';
+// Agregamos el ícono "Map" para el nuevo botón de rutas
+import { Star, ArrowRight, MapPin, Plane, ShieldCheck, Map } from 'lucide-react';
 
 // 🔌 Conexión con la carpeta de assets
 import logoCuadrado from './assets/logocuadrado.png'; 
@@ -17,14 +18,14 @@ export default function Hero() {
       {/* CONTENEDOR CENTRAL: gap-2 para mantenerlo compacto pero natural */}
       <div className="relative z-10 w-full flex flex-col items-center justify-center text-center gap-2 max-w-4xl mx-auto">
         
-        {/* 1. LOGO (Con el aumento del 30% mantenido) */}
+        {/* 1. LOGO */}
         <img 
           src={logoCuadrado} 
           alt="Good Trip Car Rentals Logo" 
           className="w-72 h-72 sm:w-80 sm:h-80 lg:w-[400px] lg:h-[400px] object-contain flex-shrink-0 filter drop-shadow-[0_10px_30px_rgba(136,189,242,0.05)] animate-in fade-in zoom-in-95 duration-700"
         />
 
-        {/* 2. BLOQUE DE TEXTO (Sin márgenes negativos, flujo natural) */}
+        {/* 2. BLOQUE DE TEXTO */}
         <div className="flex flex-col items-center w-full px-2 z-20">
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter uppercase italic text-white drop-shadow-[0_4px_12px_rgba(18,19,25,0.8)] leading-none mb-2">
             Good Trip <br className="sm:hidden" />
@@ -49,14 +50,26 @@ export default function Hero() {
           </p>
         </div>
 
-        {/* 4. CTA PRINCIPAL (arriba del pliegue, clave para tráfico pago) */}
-        <a
-          href="#booking-section"
-          className="group mt-5 inline-flex items-center gap-2.5 bg-[#88BDF2] text-[#121319] font-black uppercase tracking-widest text-xs sm:text-sm px-7 py-3.5 rounded-2xl shadow-[0_8px_30px_rgba(136,189,242,0.35)] hover:bg-white hover:scale-[1.03] active:scale-95 transition-all"
-        >
-          {t('hero_cta', 'Cotizá tu auto ahora')}
-          <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-        </a>
+        {/* 4. BOTONES / CTAs (arriba del pliegue) */}
+        <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mt-5">
+          {/* CTA PRINCIPAL */}
+          <a
+            href="#booking-section"
+            className="group inline-flex items-center gap-2.5 bg-[#88BDF2] text-[#121319] font-black uppercase tracking-widest text-xs sm:text-sm px-7 py-3.5 rounded-2xl shadow-[0_8px_30px_rgba(136,189,242,0.35)] hover:bg-white hover:scale-[1.03] active:scale-95 transition-all"
+          >
+            {t('hero_cta', 'Cotizá tu auto ahora')}
+            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+          </a>
+
+          {/* CTA SECUNDARIO - RUTAS */}
+          <a
+            href="#guias-rutas"
+            className="group inline-flex items-center gap-2.5 bg-[#88BDF2] text-[#121319] font-black uppercase tracking-widest text-xs sm:text-sm px-7 py-3.5 rounded-2xl shadow-[0_8px_30px_rgba(136,189,242,0.35)] hover:bg-white hover:scale-[1.03] active:scale-95 transition-all"
+          >
+            {t('hero_routes_cta', 'Ver Rutas Turísticas')}
+            <Map size={16} className="group-hover:scale-110 transition-transform" />
+          </a>
+        </div>
 
         {/* 5. BARRA DE CONFIANZA / USP */}
         <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mt-5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-white/85">
