@@ -1,6 +1,6 @@
 // client/src/RoutesSection.jsx
 import React, { useEffect, useState } from 'react';
-import axios from 'axios'; // ✨ REPARADO: Se eliminó la línea duplicada que rompía el compilador de Vite
+import axios from 'axios';
 import { Navigation, Loader2, MapPin } from 'lucide-react';
 
 // Unificamos al puerto 3000 que es donde corre tu backend real
@@ -43,8 +43,18 @@ export default function RoutesSection() {
   if (rutas.length === 0) return null;
 
   return (
-    <div className="w-full animate-in fade-in duration-500 max-w-7xl mx-auto px-4">
+    <div className="w-full animate-in fade-in duration-500 max-w-7xl mx-auto px-4 py-10">
       
+      {/* SECCIÓN DE TÍTULO */}
+      <div className="mb-12 text-center md:text-left">
+        <h2 className="text-4xl md:text-5xl font-black text-white italic uppercase tracking-tighter mb-4">
+          Guía Turística <span className="text-[#88BDF2]">Interactiva</span>
+        </h2>
+        <p className="text-white/60 font-medium italic">
+          Explora nuestras rutas recomendadas y comienza tu viaje con un solo clic.
+        </p>
+      </div>
+
       {/* GRID RESPONSIVO: 1 columna en móviles, 2 en tablets, 3 en escritorio */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {rutas.map((r) => (

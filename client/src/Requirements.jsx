@@ -49,14 +49,18 @@ export default function Requirements() {
 
   return (
     // Contenedor idéntico en estilo, bordes y sombras al BookingForm
-    <div className="w-full bg-[#1E222F] border border-slate-800 rounded-[2rem] p-8 md:p-10 shadow-2xl font-sans text-white animate-in fade-in duration-500">
+    <div className="w-full bg-[#1E222F] border border-slate-800 rounded-[2rem] p-8 md:p-10 shadow-2xl font-sans text-white animate-in fade-in duration-500 overflow-hidden">
       
-      {/* Cabecera unificada */}
-      <div className="border-b border-slate-800/60 pb-6 mb-8">
-        <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight flex items-center gap-3">
-          <ClipboardList className="text-[#88BDF2]" size={28} /> Requisitos <span className="text-[#88BDF2]">Contractuales</span>
+      {/* Cabecera unificada - CORREGIDA PARA MÓVILES */}
+      <div className="border-b border-slate-800/60 pb-6 mb-8 w-full">
+        <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight flex items-start sm:items-center gap-3 w-full">
+          <ClipboardList className="text-[#88BDF2] flex-shrink-0 mt-0.5 sm:mt-0" size={28} /> 
+          {/* El contenedor flex-1 asegura que el texto se adapte y baje de línea si es necesario */}
+          <span className="flex-1 break-words leading-tight">
+            Requisitos <span className="text-[#88BDF2]">Contractuales</span>
+          </span>
         </h2>
-        <p className="text-slate-400 text-xs md:text-sm mt-1.5 font-medium tracking-wide">
+        <p className="text-slate-400 text-xs md:text-sm mt-2 font-medium tracking-wide">
           Todo lo que necesitás saber antes de retirar tu unidad en Mendoza.
         </p>
       </div>
