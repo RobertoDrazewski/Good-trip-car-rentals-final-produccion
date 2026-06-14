@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Star } from 'lucide-react';
+import { Star, ArrowRight, MapPin, Plane, ShieldCheck } from 'lucide-react';
 
 // 🔌 Conexión con la carpeta de assets
 import logoCuadrado from './assets/logocuadrado.png'; 
@@ -32,7 +32,7 @@ export default function Hero() {
           </h2>
           
           <p className="text-xs sm:text-sm md:text-base opacity-90 text-white font-bold max-w-xl leading-snug text-center balance">
-            {t('hero_subtitle', 'Recorré Mendoza de acuerdo a tus tiempos!. Alquilá tu auto y accedé a nuestras guías interactivas en Google Maps con un solo clic. Servicio premium 5 estrellas')}
+            {t('hero_subtitle', 'Recorré Mendoza a tu ritmo. Alquilá tu auto y accedé a nuestras guías interactivas en Google Maps con un solo clic. Servicio premium 5 estrellas.')}
           </p>
         </div>
 
@@ -47,6 +47,24 @@ export default function Hero() {
           <p className="text-[10px] md:text-xs uppercase tracking-widest font-black text-white/90">
             {t('hero_badge', '5 Estrellas en Google')}
           </p>
+        </div>
+
+        {/* 4. CTA PRINCIPAL (arriba del pliegue, clave para tráfico pago) */}
+        <a
+          href="#booking-section"
+          className="group mt-5 inline-flex items-center gap-2.5 bg-[#88BDF2] text-[#121319] font-black uppercase tracking-widest text-xs sm:text-sm px-7 py-3.5 rounded-2xl shadow-[0_8px_30px_rgba(136,189,242,0.35)] hover:bg-white hover:scale-[1.03] active:scale-95 transition-all"
+        >
+          {t('hero_cta', 'Cotizá tu auto ahora')}
+          <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+        </a>
+
+        {/* 5. BARRA DE CONFIANZA / USP */}
+        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mt-5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-white/85">
+          <span className="flex items-center gap-1.5"><MapPin size={13} className="text-[#88BDF2]" /> {t('hero_usp_local', 'Atención local en Mendoza')}</span>
+          <span className="hidden sm:inline w-[1px] h-3 bg-white/20" />
+          <span className="flex items-center gap-1.5"><Plane size={13} className="text-[#88BDF2]" /> {t('hero_usp_airport', 'Retiro en aeropuerto')}</span>
+          <span className="hidden sm:inline w-[1px] h-3 bg-white/20" />
+          <span className="flex items-center gap-1.5"><ShieldCheck size={13} className="text-[#88BDF2]" /> {t('hero_usp_support', 'Reserva por WhatsApp')}</span>
         </div>
 
       </div>

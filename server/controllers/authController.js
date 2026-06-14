@@ -2,9 +2,8 @@
 const db = require('../config/db.config');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { Resend } = require('resend');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const { sendMail } = require('../utils/mailer');
 const JWT_SECRET = process.env.JWT_SECRET || 'good_trip_secret_key_ultra_secure_2026';
 
 const extraerFilas = (r) => {
@@ -103,9 +102,8 @@ const inviteAdmin = async (req, res) => {
 
     // Enviar email con credenciales
     try {
-      await resend.emails.send({
-        from: 'Good Trip <onboarding@resend.dev>',
-        to:   'goodtripmendoza@gmail.com',
+      await sendMail({
+        to: 'Goodtripmendoza@gmail.com',
         subject: `👤 NUEVO ADMIN CREADO: ${name}`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:600px;padding:24px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc">

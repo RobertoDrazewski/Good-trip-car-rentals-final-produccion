@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Phone } from 'lucide-react';
 
 // Mismo logo blanco que usamos en la aplicación
-import logoBlanco from './assets/logo.png';
+import logoBlanco from './assets/logo.webp';
 
 export default function Footer() {
   const navigate = useNavigate();
@@ -51,7 +51,7 @@ export default function Footer() {
         {/* DERECHA: Acceso Staff (minimalista) */}
         <div className="flex justify-center md:justify-end w-full">
           <button 
-            onClick={() => navigate('/admin/login')} 
+            onClick={() => navigate('/login')} 
             className="text-slate-500 hover:text-[#88BDF2] transition-colors border border-slate-800/80 hover:border-[#88BDF2]/30 px-3 py-1.5 rounded-xl uppercase tracking-widest text-[9px] bg-[#121319]/40"
           >
             Acceso Staff

@@ -1,7 +1,7 @@
 // client/src/GoogleReviews.jsx
 import React from 'react';
 import { Star, Quote, ExternalLink } from 'lucide-react';
-import logoBlanco from './assets/logo.png';
+import logoBlanco from './assets/logo.webp';
 
 export default function GoogleReviews() {
   const reviews = [

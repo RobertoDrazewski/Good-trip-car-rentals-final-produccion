@@ -1,36 +1,101 @@
 <!doctype html>
-<html lang="es">
+<html lang="es-AR">
   <head>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-VT36DTH3BD"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
       gtag('config', 'G-VT36DTH3BD');
+
+      // ── Google Ads (opcional pero recomendado) ──────────────────────────
+      // Descomentá y reemplazá AW-XXXXXXXXXX por tu ID de Google Ads para
+      // medir conversiones directo en Ads (además de importarlas desde GA4).
+      // gtag('config', 'AW-XXXXXXXXXX');
     </script>
 
+    <script>
+      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+      n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+      document,'script','https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', 'TU_PIXEL_ID');
+      fbq('track', 'PageView');
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <title>Good Trip Car Rentals | Alquiler de Autos en Mendoza</title>
-    
-    <link rel="manifest" href="/manifest.json" />
 
-    <meta name="theme-color" content="#ffffff" />
-    
+    <title>Good Trip Car Rentals | Alquiler de Autos en Mendoza</title>
+    <meta name="description" content="Alquiler de autos en Mendoza con atención local, retiro en aeropuerto El Plumerillo, guías de rutas y reserva por WhatsApp. Servicio premium 5 estrellas en Google." />
+    <meta name="keywords" content="alquiler de autos mendoza, rent a car mendoza, alquiler autos aeropuerto mendoza, car rental mendoza argentina" />
+    <meta name="author" content="Good Trip Car Rentals" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://goodtrip.com.ar/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Good Trip Car Rentals" />
+    <meta property="og:locale" content="es_AR" />
+    <meta property="og:title" content="Good Trip Car Rentals | Alquiler de Autos en Mendoza" />
+    <meta property="og:description" content="Recorré Mendoza a tu ritmo. Reservá tu auto en minutos, con guías de rutas y atención local 5 estrellas." />
+    <meta property="og:url" content="https://goodtrip.com.ar/" />
+    <meta property="og:image" content="https://goodtrip.com.ar/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Good Trip Car Rentals | Alquiler de Autos en Mendoza" />
+    <meta name="twitter:description" content="Recorré Mendoza a tu ritmo. Reservá tu auto en minutos con atención local 5 estrellas." />
+    <meta name="twitter:image" content="https://goodtrip.com.ar/og-image.jpg" />
+
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#121319" />
+
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512.png" />
-
     <link rel="apple-touch-icon" href="/apple-icon.png" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "AutoRental",
+      "name": "Good Trip Car Rentals",
+      "description": "Alquiler de autos en Mendoza, Argentina. Atención local, retiro en aeropuerto y guías de rutas.",
+      "url": "https://goodtrip.com.ar/",
+      "image": "https://goodtrip.com.ar/og-image.jpg",
+      "telephone": "+5492612764618",
+      "email": "Goodtripmendoza@gmail.com",
+      "priceRange": "$$",
+      "areaServed": "Mendoza, Argentina",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Mendoza",
+        "addressRegion": "Mendoza",
+        "addressCountry": "AR"
+      },
+      "sameAs": [
+        "https://www.instagram.com/goodtripcarrentals/"
+      ],
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "5",
+        "bestRating": "5",
+        "ratingCount": "20"
+      }
+    }
+    </script>
   </head>
   <body class="bg-white text-slate-900 antialiased">
     
+    <noscript>
+      <img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=TU_PIXEL_ID&ev=PageView&noscript=1"/>
+    </noscript>
+
     <div id="root"></div>
 
     <script type="module" src="/src/main.jsx"></script>

@@ -5,6 +5,7 @@ import {
   CheckCircle, Car, MapPin, Loader2, ShieldCheck,
   BadgeDollarSign, MessageCircle, Printer, AlertTriangle
 } from 'lucide-react';
+import { trackLead, trackContact } from './analytics';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -55,7 +56,7 @@ export default function QuoteResult({ quote, onClose }) {
       .footer{margin-top:32px;font-size:10px;color:#888;text-align:center}
     </style></head><body>
     <h1>🚗 GOOD TRIP CARS</h1>
-    <div class="sub">Mendoza, Argentina · goodtripmendoza@gmail.com</div>
+    <div class="sub">Mendoza, Argentina · Goodtripmendoza@gmail.com</div>
     <div class="badge">PRESUPUESTO Nº ${nro}</div>
     <div class="row"><span>Cliente</span><span>${quote.cliente_nombre||'-'}</span></div>
     <div class="row"><span>WhatsApp</span><span>${quote.cliente_whatsapp||'-'}</span></div>
@@ -82,6 +83,7 @@ export default function QuoteResult({ quote, onClose }) {
 
   // ── WhatsApp ─────────────────────────────────────────────────────
   const enviarWA = () => {
+    trackContact({ method: 'whatsapp', source: 'quote_summary' });
     const tel = String(quote.cliente_whatsapp||'').replace(/\D/g,'');
     const fmt = tel.startsWith('54') ? tel : `54${tel}`;
     const msg = encodeURIComponent(
@@ -110,7 +112,8 @@ export default function QuoteResult({ quote, onClose }) {
       `🛡️ Garantía: USD ${garantiaUsd}\n` +
       `💳 Pago: ${factorTexto}`
     );
-    window.open(`https://wa.me/542612764618?text=${msg}`, '_blank');
+    // FIX: faltaba el "9" de la numeración móvil argentina (54 9 ...).
+    window.open(`https://wa.me/5492612764618?text=${msg}`, '_blank');
   };
 
   // ── Confirmar reserva ────────────────────────────────────────────
@@ -140,6 +143,13 @@ export default function QuoteResult({ quote, onClose }) {
       const res = await axios.post(`${API}/api/reservas`, payload);
       if (res.data.success) {
         setConfirmado(true);
+        // 📊 Conversión principal (Meta Pixel "Lead" + GA4/Ads "generate_lead")
+        trackLead({
+          value: Math.round(montoTotal),
+          currency: 'ARS',
+          content_name: quote.auto_modelo || 'Auto',
+          dias: diasTexto,
+        });
         // Abrir WhatsApp de Good Trip automáticamente con los datos del lead
         setTimeout(() => abrirWAGoodTrip(), 800);
       }

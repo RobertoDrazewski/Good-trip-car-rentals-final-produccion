@@ -220,7 +220,7 @@ function AdminLayout({ onLogout }) {
       .footer{margin-top:32px;font-size:10px;color:#888;text-align:center}
     </style></head><body>
     <h1>🚗 GOOD TRIP CARS</h1>
-    <div class="sub">goodtripmendoza@gmail.com</div>
+    <div class="sub">Goodtripmendoza@gmail.com</div>
     <div class="badge">RESERVA #${r.id}</div>
     <div class="row"><span>Cliente</span><span>${r.cliente_nombre||'-'}</span></div>
     <div class="row"><span>WhatsApp</span><span>${r.cliente_whatsapp||'-'}</span></div>

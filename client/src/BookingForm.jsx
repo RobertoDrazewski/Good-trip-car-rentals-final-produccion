@@ -1,6 +1,7 @@
 // client/src/BookingForm.jsx — v4
 import React, { useState, useEffect } from 'react';
 import { Baby, Loader2, Car, Info, AlertTriangle, MessageCircle, Globe, Calendar, Cog } from 'lucide-react';
+import { trackQuote, trackContact } from './analytics';
 
 const PAISES = [
   "Argentina","Chile","Brasil","Uruguay","Bolivia","Paraguay","Perú",
@@ -165,6 +166,14 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], promos=
                          : form.metodo_pago==='tarjeta_6' ? 1 + recT6/100 : 1;
       const total        = subtotalNeto * factor;
 
+      // 📊 Conversión de intención alta (Meta "InitiateCheckout" + GA4 "generate_quote")
+      trackQuote({
+        value: Math.round(total),
+        currency: 'ARS',
+        content_name: autoSel?.modelo || 'Vehículo',
+        dias,
+      });
+
       onQuoteGenerated({
         enviado:true,
         auto_id:aid, auto_modelo:autoSel?.modelo||'Vehículo', auto_patente:autoSel?.patente||'',
@@ -292,7 +301,7 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], promos=
               <p className="text-sm font-black text-amber-300 uppercase">¡Vehículo no disponible en esas fechas!</p>
               <p className="text-xs text-slate-400 mt-1">Ya hay una reserva activa. Podemos ofrecerte otra opción.</p>
             </div>
-            <button type="button" onClick={()=>window.open(`https://wa.me/5492614000000?text=${encodeURIComponent('Hola, quiero consultar disponibilidad para '+form.desde+' al '+form.hasta)}`)
+            <button type="button" onClick={()=>{ trackContact({ method:'whatsapp', source:'booking_unavailable' }); window.open(`https://wa.me/5492612764618?text=${encodeURIComponent('Hola, quiero consultar disponibilidad para '+form.desde+' al '+form.hasta)}`); }
             } className="flex items-center gap-2 bg-emerald-500 text-white text-xs font-black px-4 py-2 rounded-xl hover:bg-emerald-400 shrink-0">
               <MessageCircle size={14}/> WhatsApp
             </button>

@@ -1,7 +1,6 @@
 // server/controllers/reservaController.js
 const db = require('../config/db.config');
-const { Resend } = require('resend');
-const resend = new Resend(process.env.RESEND_API_KEY);
+const { sendMail } = require('../utils/mailer');
 
 const extraerFilas = (r) => {
   if (!r) return [];
@@ -109,9 +108,8 @@ const createReserva = async (req, res) => {
 
     // Email a goodtripmendoza@gmail.com
     try {
-      await resend.emails.send({
-        from: 'Good Trip <onboarding@resend.dev>',
-        to:   'goodtripmendoza@gmail.com',
+      await sendMail({
+        to: 'Goodtripmendoza@gmail.com',
         subject: `🚀 NUEVA RESERVA: ${cliente_nombre} — ${String(fecha_inicio).substring(0,10)}`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:600px;padding:24px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc">
