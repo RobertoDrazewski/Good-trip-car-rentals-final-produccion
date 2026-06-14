@@ -15,7 +15,8 @@ export default function Footer() {
 
   return (
     // Reducido el padding vertical (pt-6 pb-6) para achicar el footer a la mitad
-    <footer className="relative bg-[#121319]/90 backdrop-blur-md border-t border-slate-800/60 pt-6 pb-6 w-full text-white z-50">
+    // 👇 AQUÍ ESTÁ EL CAMBIO: cambiamos z-50 por z-10
+    <footer className="relative bg-[#121319]/90 backdrop-blur-md border-t border-slate-800/60 pt-6 pb-6 w-full text-white z-10">
       <div className="w-full max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-6 items-center text-[11px] font-bold">
 
         {/* IZQUIERDA: Copyright, Teléfono e Instagram */}
