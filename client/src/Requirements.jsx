@@ -42,17 +42,12 @@ export default function Requirements() {
     );
   }
 
-  // Segmentación del array dinámico proveniente de MySQL
-  const mitad = Math.ceil(reqs.length / 2);
-  const columnaIzquierda = reqs.slice(0, mitad);
-  const columnaDerecha = reqs.slice(mitad);
-
   return (
     // Contenedor idéntico en estilo, bordes y sombras al BookingForm
-    <div className="w-full bg-[#1E222F] border border-slate-800 rounded-[2rem] p-8 md:p-10 shadow-2xl font-sans text-white animate-in fade-in duration-500 overflow-hidden">
+    <div className="w-full bg-[#1E222F] border border-slate-800 rounded-[2rem] p-6 md:p-8 lg:p-10 shadow-2xl font-sans text-white animate-in fade-in duration-500 overflow-hidden">
       
       {/* Cabecera unificada - CORREGIDA PARA MÓVILES */}
-      <div className="border-b border-slate-800/60 pb-6 mb-8 w-full">
+      <div className="border-b border-slate-800/60 pb-6 mb-6 md:mb-8 w-full">
         <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight flex items-start sm:items-center gap-3 w-full">
           <ClipboardList className="text-[#88BDF2] flex-shrink-0 mt-0.5 sm:mt-0" size={28} /> 
           {/* El contenedor flex-1 asegura que el texto se adapte y baje de línea si es necesario */}
@@ -65,58 +60,34 @@ export default function Requirements() {
         </p>
       </div>
 
-      {/* Grid de dos columnas para los bloques de requisitos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start w-full">
+      {/* Contenedor Principal: 
+        - En móvil: flex horizontal (carrusel deslizable)
+        - En PC (lg): grid de 2 columnas estáticas
+      */}
+      <div className="flex lg:grid lg:grid-cols-2 gap-4 md:gap-5 w-full overflow-x-auto lg:overflow-visible snap-x snap-mandatory lg:snap-none scroll-smooth pb-4 lg:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         
-        {/* Columna Izquierda */}
-        <div className="flex flex-col gap-4 w-full text-left">
-          {columnaIzquierda.map((item) => (
-            <div 
-              key={item.id} 
-              className="p-5 rounded-2xl bg-[#121319] border border-slate-800/80 shadow-md flex items-start gap-4 hover:border-[#88BDF2]/40 transition-all duration-300 min-w-0 w-full"
-            >
-              {/* Contenedor del ícono robusto y alineado arriba */}
-              <div className="p-3 bg-[#1E222F] rounded-xl text-[#88BDF2] border border-slate-800 flex-shrink-0 text-xl w-12 h-12 flex items-center justify-center shadow-inner">
-                {item.icono || '📌'}
-              </div>
-              
-              {/* Bloque de textos con fuentes al doble de tamaño y adaptabilidad total */}
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <h3 className="text-sm md:text-base font-black uppercase tracking-wide text-white break-words whitespace-normal">
-                  {item.titulo}
-                </h3>
-                <p className="text-xs md:text-sm text-slate-300 font-medium leading-relaxed break-words whitespace-normal">
-                  {item.descripcion}
-                </p>
-              </div>
+        {reqs.map((item) => (
+          <div 
+            key={item.id} 
+            // La tarjeta tiene un ancho fijo en móvil para obligar al scroll, y retoma el 100% en PC
+            className="w-[85vw] max-w-[320px] lg:w-full lg:max-w-none shrink-0 snap-center p-5 rounded-2xl bg-[#121319] border border-slate-800/80 shadow-md flex items-start gap-4 hover:border-[#88BDF2]/40 transition-all duration-300 min-w-0"
+          >
+            {/* Contenedor del ícono robusto y alineado arriba */}
+            <div className="p-3 bg-[#1E222F] rounded-xl text-[#88BDF2] border border-slate-800 flex-shrink-0 text-xl w-12 h-12 flex items-center justify-center shadow-inner">
+              {item.icono || '📌'}
             </div>
-          ))}
-        </div>
-
-        {/* Columna Derecha */}
-        <div className="flex flex-col gap-4 w-full text-left">
-          {columnaDerecha.map((item) => (
-            <div 
-              key={item.id} 
-              className="p-5 rounded-2xl bg-[#121319] border border-slate-800/80 shadow-md flex items-start gap-4 hover:border-[#88BDF2]/40 transition-all duration-300 min-w-0 w-full"
-            >
-              {/* Contenedor del ícono */}
-              <div className="p-3 bg-[#1E222F] rounded-xl text-[#88BDF2] border border-slate-800 flex-shrink-0 text-xl w-12 h-12 flex items-center justify-center shadow-inner">
-                {item.icono || '📌'}
-              </div>
-              
-              {/* Textos legibles */}
-              <div className="min-w-0 flex-1 space-y-1.5">
-                <h3 className="text-sm md:text-base font-black uppercase tracking-wide text-white break-words whitespace-normal">
-                  {item.titulo}
-                </h3>
-                <p className="text-xs md:text-sm text-slate-300 font-medium leading-relaxed break-words whitespace-normal">
-                  {item.descripcion}
-                </p>
-              </div>
+            
+            {/* Bloque de textos con fuentes al doble de tamaño y adaptabilidad total */}
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <h3 className="text-sm md:text-base font-black uppercase tracking-wide text-white break-words whitespace-normal">
+                {item.titulo}
+              </h3>
+              <p className="text-xs md:text-sm text-slate-300 font-medium leading-relaxed break-words whitespace-normal">
+                {item.descripcion}
+              </p>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
 
       </div>
     </div>

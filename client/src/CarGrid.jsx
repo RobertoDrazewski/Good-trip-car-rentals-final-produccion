@@ -85,7 +85,9 @@ export default function CarGrid() {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {/* Carrusel horizontal (1 tarjeta por pantalla) en TODO lo menor a lg (1024px):
+          cubre teléfonos, tablets y ventanas angostas. En lg+ vuelve a la grilla de 3. */}
+      <div className="flex lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-8 overflow-x-auto lg:overflow-visible snap-x snap-mandatory lg:snap-none -mx-4 px-4 lg:mx-0 lg:px-0 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {autos.map((a) => {
           // El precio NO se muestra en la tarjeta (decisión del cliente).
           // La tarifa se resuelve en el BookingForm según el mes solicitado.
@@ -118,10 +120,10 @@ export default function CarGrid() {
           return (
             <div 
               key={a.id} 
-              className="bg-[#1E222F] border border-slate-800/60 rounded-3xl overflow-hidden shadow-2xl hover:border-[#88BDF2]/40 transition-all group flex flex-col justify-between"
+              className="w-[85vw] max-w-[340px] lg:w-full lg:max-w-none shrink-0 snap-center bg-[#1E222F] border border-slate-800/60 rounded-3xl overflow-hidden shadow-2xl hover:border-[#88BDF2]/40 transition-all group flex flex-col justify-between"
             >
               {/* Encabezado Visual e Imagen */}
-              <div className="w-full aspect-[4/3] bg-[#121319]/80 relative overflow-hidden flex items-center justify-center border-b border-slate-800/40">
+              <div className="w-full aspect-[16/9] lg:aspect-[4/3] bg-[#121319]/80 relative overflow-hidden flex items-center justify-center border-b border-slate-800/40">
                 {a.imagen_url ? (
                   <img src={a.imagen_url} alt={a.modelo} className="object-contain w-full h-full p-2 transform group-hover:scale-105 transition-transform duration-500" />
                 ) : (
@@ -136,12 +138,12 @@ export default function CarGrid() {
               </div>
 
               {/* Contenido Ficha Informativa */}
-              <div className="p-5 flex-1 flex flex-col justify-between gap-4">
+              <div className="p-4 lg:p-5 flex-1 flex flex-col justify-between gap-3 lg:gap-4">
                 <div className="text-left">
                   <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2 group-hover:text-[#88BDF2] transition-colors">
                     {a.modelo}
                   </h3>
-                  <p className="text-xs text-slate-400 line-clamp-2 mb-4 font-medium leading-relaxed">
+                  <p className="text-xs text-slate-400 line-clamp-2 mb-3 lg:mb-4 font-medium leading-relaxed">
                     {a.descripcion_larga || 'Vehículo equipado con altos estándares operacionales y de seguridad.'}
                   </p>
 
@@ -155,9 +157,9 @@ export default function CarGrid() {
                           return (
                             <div
                               key={key}
-                              className="bg-[#121319]/60 border border-slate-800/60 rounded-xl py-2.5 px-1 flex flex-col items-center justify-start gap-1.5 hover:border-[#88BDF2]/40 hover:bg-[#88BDF2]/5 transition-colors"
+                              className="bg-[#121319]/60 border border-slate-800/60 rounded-xl py-2 lg:py-2.5 px-1 flex flex-col items-center justify-start gap-1 lg:gap-1.5 hover:border-[#88BDF2]/40 hover:bg-[#88BDF2]/5 transition-colors"
                             >
-                              <IconoEquip size={24} className="text-[#88BDF2] shrink-0" />
+                              <IconoEquip size={24} className="w-5 h-5 lg:w-6 lg:h-6 text-[#88BDF2] shrink-0" />
                               <span className="text-[8px] font-bold uppercase text-slate-400 text-center leading-tight tracking-tight">
                                 {MAPA_ICONOS[key] || key}
                               </span>
@@ -178,10 +180,10 @@ export default function CarGrid() {
                     "huevo o la gallina": la tarifa depende del mes que el cliente
                     pida en la cotización). Acá solo se elige el auto; el precio
                     real lo calcula el BookingForm según el mes solicitado. */}
-                <div className="pt-4 border-t border-slate-800/40">
+                <div className="pt-3 lg:pt-4 border-t border-slate-800/40">
                    <button 
                       onClick={() => handleReservarAuto(a.id)}
-                      className="w-full px-5 py-3.5 bg-[#88BDF2] text-[#121319] font-black uppercase text-[11px] tracking-widest rounded-xl hover:bg-white transition-all transform active:scale-95 cursor-pointer shadow-lg"
+                      className="w-full px-5 py-3 lg:py-3.5 bg-[#88BDF2] text-[#121319] font-black uppercase text-[11px] tracking-widest rounded-xl hover:bg-white transition-all transform active:scale-95 cursor-pointer shadow-lg"
                    >
                       Cotizar este vehículo
                    </button>

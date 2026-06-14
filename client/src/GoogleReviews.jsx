@@ -30,10 +30,11 @@ export default function GoogleReviews() {
 
   return (
     // Clonado exacto del contenedor raíz de BookingForm para simetría total
-    <div className="w-full bg-[#1E222F] border border-slate-800 rounded-[2rem] p-8 shadow-2xl font-sans text-white">
+    // Se ajustó ligeramente el padding a p-6 md:p-8 y overflow-hidden para asegurar un scroll limpio en móviles
+    <div className="w-full bg-[#1E222F] border border-slate-800 rounded-[2rem] p-6 md:p-8 shadow-2xl font-sans text-white overflow-hidden">
       
       {/* Cabecera de Reseñas */}
-      <div className="flex flex-col items-center gap-5 mb-8 border-b border-slate-800/60 pb-6">
+      <div className="flex flex-col items-center gap-5 mb-8 border-b border-slate-800/60 pb-6 w-full">
 
         {/* Badge de Google Rating (5 estrellas) */}
         <div className="flex items-center justify-center gap-3.5 bg-[#121319] border border-slate-800 p-3.5 rounded-2xl w-full sm:w-auto">
@@ -64,12 +65,12 @@ export default function GoogleReviews() {
         </div>
       </div>
 
-      {/* Grid de Tarjetas de Reseñas (Cambiadas a columna única para respetar el espacio del Home) */}
-      <div className="space-y-4">
+      {/* Grid de Tarjetas de Reseñas adaptado a Carrusel móvil / Columna en PC */}
+      <div className="flex lg:flex-col gap-4 w-full overflow-x-auto lg:overflow-visible snap-x snap-mandatory lg:snap-none scroll-smooth pb-4 lg:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {reviews.map((review) => (
           <div 
             key={review.id} 
-            className="bg-[#121319] p-5 rounded-2xl border border-slate-800/80 flex flex-col justify-between relative group hover:border-[#88BDF2]/40 transition-all duration-300 shadow-md"
+            className="w-[85vw] max-w-[320px] lg:w-full lg:max-w-none shrink-0 snap-center bg-[#121319] p-5 rounded-2xl border border-slate-800/80 flex flex-col justify-between relative group hover:border-[#88BDF2]/40 transition-all duration-300 shadow-md"
           >
             <Quote className="absolute top-4 right-4 text-slate-800/40 group-hover:text-[#88BDF2]/10 transition-colors" size={28} />
             

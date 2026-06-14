@@ -55,13 +55,14 @@ export default function RoutesSection() {
         </p>
       </div>
 
-      {/* GRID RESPONSIVO: 1 columna en móviles, 2 en tablets, 3 en escritorio */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {/* Carrusel horizontal (1 tarjeta por pantalla) en TODO lo menor a lg (1024px).
+          En lg+ vuelve a la grilla de 3 columnas. */}
+      <div className="flex lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-8 overflow-x-auto lg:overflow-visible snap-x snap-mandatory lg:snap-none -mx-4 px-4 lg:mx-0 lg:px-0 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {rutas.map((r) => (
           <div 
             key={r.id}
             onClick={() => handleNavigation(r.maps_url)}
-            className="w-full h-[400px] rounded-[2rem] overflow-hidden shadow-2xl relative cursor-pointer group border border-white/10 hover:border-[#88BDF2]/40 transition-all duration-300"
+            className="min-w-full lg:min-w-0 lg:w-full shrink-0 snap-center h-[400px] rounded-[2rem] overflow-hidden shadow-2xl relative cursor-pointer group border border-white/10 hover:border-[#88BDF2]/40 transition-all duration-300"
           >
             {/* IMAGEN DE FONDO */}
             <img 

@@ -187,7 +187,6 @@ export default function WeatherWidget() {
     };
   };
 
-  // Encabezado reutilizable para que esté presente incluso si los datos están cargando
   const sectionHeader = (
     <div className="mb-8 text-center md:text-left">
       <h2 className="text-3xl md:text-4xl font-black text-white italic uppercase tracking-tighter mb-2">
@@ -294,24 +293,24 @@ export default function WeatherWidget() {
             </div>
           </div>
 
-          {/* PRONÓSTICO 7 DÍAS */}
-          <div className="flex overflow-x-auto pb-2 gap-2.5 snap-x snap-mandatory scrollbar-none md:grid md:grid-cols-7 md:pb-0 w-full">
+          {/* PRONÓSTICO 7 DÍAS - CORREGIDO PARA MOSTRARSE SIN SCROLL EN MÓVIL */}
+          <div className="grid grid-cols-7 gap-1 md:gap-2.5 w-full">
             {data.forecast.forecastday.map((day, idx) => (
               <div 
                 key={idx} 
-                className={`min-w-[95px] md:min-w-0 p-3 rounded-2xl text-center border transition-all duration-300 snap-center flex-shrink-0 flex-1 ${
+                className={`p-1.5 md:p-3 rounded-xl md:rounded-2xl text-center border transition-all duration-300 flex flex-col items-center justify-center ${
                   idx === 0 
                   ? 'bg-yellow-500 border-yellow-400 text-slate-950 shadow-sm' 
                   : 'bg-white/5 border-white/5 text-inherit'
                 }`}
               >
-                <p className={`text-[10px] font-black uppercase mb-1 tracking-wider ${idx === 0 ? 'text-slate-900 font-black' : 'opacity-60'}`}>
-                  {idx === 0 ? 'Hoy' : new Date(day.date + "T00:00:00").toLocaleDateString('es-AR', { weekday: 'short' })}
+                <p className={`text-[8px] md:text-[10px] font-black uppercase mb-0.5 md:mb-1 tracking-tighter md:tracking-wider ${idx === 0 ? 'text-slate-900 font-black' : 'opacity-60'}`}>
+                  {idx === 0 ? 'Hoy' : new Date(day.date + "T00:00:00").toLocaleDateString('es-AR', { weekday: 'short' }).replace('.', '')}
                 </p>
-                <img src={day.day.condition.icon} alt="icon" className="w-8 h-8 mx-auto mb-1 drop-shadow" />
-                <p className="text-base font-black italic">{Math.round(day.day.maxtemp_c)}°</p>
-                <p className={`text-[9px] font-black uppercase ${idx === 0 ? 'text-slate-900 opacity-60' : 'text-sky-300'}`}>
-                   Min {Math.round(day.day.mintemp_c)}°
+                <img src={day.day.condition.icon} alt="icon" className="w-5 h-5 md:w-8 md:h-8 mx-auto mb-0.5 md:mb-1 drop-shadow" />
+                <p className="text-xs md:text-base font-black italic leading-none">{Math.round(day.day.maxtemp_c)}°</p>
+                <p className={`text-[7px] md:text-[9px] font-black uppercase mt-1 ${idx === 0 ? 'text-slate-900 opacity-60' : 'text-sky-300'}`}>
+                   <span className="hidden md:inline">Min </span>{Math.round(day.day.mintemp_c)}°
                 </p>
               </div>
             ))}
