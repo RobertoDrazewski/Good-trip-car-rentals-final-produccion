@@ -1,11 +1,11 @@
 // client/src/CarGrid.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import {
   Loader2, Star, Car, Check,
   Snowflake, Bluetooth, Navigation, Armchair, Sun, ShieldCheck,
   Disc, Baby, Camera, Gauge, Settings2, Cog, Fuel, Droplet,
-  Leaf, Mountain, SlidersHorizontal
+  Leaf, Mountain, SlidersHorizontal, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -16,6 +16,11 @@ export default function CarGrid() {
   const [autos, setAutos] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Estados y Ref para el control del carrusel móvil
+  const scrollRef = useRef(null);
+  const [mostrarIzq, setMostrarIzq] = useState(false);
+  const [mostrarDer, setMostrarDer] = useState(true);
+
   // Diccionario para traducir IDs de íconos a textos estéticos legibles
   const MAPA_ICONOS = {
     aire: 'Aire Acond.', bluetooth: 'Bluetooth', pantalla: 'GPS / Pantalla', asientos_cuero: 'Cuero', techo: 'Techo Corredizo',
@@ -24,8 +29,6 @@ export default function CarGrid() {
     traccion_4x4: '4x4 / 4WD', tipo_sedan: 'Sedán', perfil_manejo: 'Modos Manejo'
   };
 
-  // Cada clave de equipamiento apunta a su ícono de lucide-react.
-  // Si una clave no está acá, se usa <Check> como respaldo.
   const MAPA_ICONOS_LUCIDE = {
     aire: Snowflake, bluetooth: Bluetooth, pantalla: Navigation, asientos_cuero: Armchair, techo: Sun,
     airbag: ShieldCheck, abs: Disc, isofix: Baby, camara: Camera, control_traccion: Gauge,
@@ -37,10 +40,6 @@ export default function CarGrid() {
     const fetchAutosPublicos = async () => {
       try {
         const resAutos = await axios.get(`${API_BASE_URL}/api/cars`);
-        // Mostramos TODOS los autos en la grilla (incluidos los que están en taller /
-        // mantenimiento). Los no disponibles se siguen viendo pero NO se pueden cotizar:
-        // el cliente nunca ve la palabra "mantenimiento", solo que ese auto no está
-        // disponible y debe elegir otro. Así la grilla nunca queda vacía.
         setAutos(resAutos.data || []);
       } catch (err) { 
         console.error("❌ Error cargando el catálogo:", err.message); 
@@ -51,22 +50,38 @@ export default function CarGrid() {
     fetchAutosPublicos();
   }, []);
 
+  // Chequea la posición del scroll para ocultar o mostrar las flechas
+  const checkScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+    setMostrarIzq(scrollLeft > 0);
+    setMostrarDer(Math.ceil(scrollLeft + clientWidth) < scrollWidth - 2);
+  };
+
+  useEffect(() => {
+    checkScroll();
+  }, [autos]);
+
+  const moverCarrusel = (direccion) => {
+    if (scrollRef.current) {
+      const salto = window.innerWidth * 0.85; 
+      scrollRef.current.scrollBy({
+        left: direccion === 'izq' ? -salto : salto,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   const handleReservarAuto = (modeloId) => {
-    // 1) Avisamos al BookingForm qué auto eligió el cliente (lo deja pre-seleccionado)
     const eventoSeleccion = new CustomEvent('autoSeleccionarVehiculo', { detail: { autoId: modeloId } });
     window.dispatchEvent(eventoSeleccion);
 
-    // 2) Scroll hasta el formulario de reserva.
-    //    Antes buscaba 'booking-section'/'booking' (IDs inexistentes) y NUNCA scrolleaba.
-    //    Ahora apunta al contenedor real y descuenta la altura del NavBar fijo
-    //    para que en móvil el formulario quede visible y no tapado por la barra.
     const destino =
       document.getElementById('booking-section') ||
       document.getElementById('reserva-y-opiniones');
 
     if (destino) {
-      const OFFSET_NAVBAR = 90; // alto aprox. del NavBar fijo
-      // Pequeño delay para que React aplique la selección antes de mover la vista
+      const OFFSET_NAVBAR = 90;
       setTimeout(() => {
         const y = destino.getBoundingClientRect().top + window.pageYOffset - OFFSET_NAVBAR;
         window.scrollTo({ top: y, behavior: 'smooth' });
@@ -84,23 +99,41 @@ export default function CarGrid() {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-8">
-      {/* Carrusel horizontal (1 tarjeta por pantalla) en TODO lo menor a lg (1024px):
-          cubre teléfonos, tablets y ventanas angostas. En lg+ vuelve a la grilla de 3. */}
-      <div className="flex lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-8 overflow-x-auto lg:overflow-visible snap-x snap-mandatory lg:snap-none -mx-4 px-4 lg:mx-0 lg:px-0 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {autos.map((a) => {
-          // El precio NO se muestra en la tarjeta (decisión del cliente).
-          // La tarifa se resuelve en el BookingForm según el mes solicitado.
+    <div className="w-full max-w-7xl mx-auto px-4 py-8 relative">
+      
+      {/* 🚀 CONTROLES FLOTANTES MÓVILES REPOSICIONADOS MÁS ARRIBA */}
+      {mostrarIzq && (
+        <button 
+          onClick={() => moverCarrusel('izq')}
+          // ✅ CAMBIO: top-[20%] los sube un poco más
+          className="lg:hidden absolute left-5 top-[20%] -translate-y-1/2 z-20 bg-[#121319]/90 border border-slate-700/80 text-[#88BDF2] w-10 h-10 flex items-center justify-center rounded-full shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-md active:scale-95 transition-transform"
+        >
+          <ChevronLeft size={24} />
+        </button>
+      )}
 
-          // 🛡️ Extracción blindada ante la normalización destructiva del backend
+      {mostrarDer && autos.length > 1 && (
+        <button 
+          onClick={() => moverCarrusel('der')}
+          // ✅ CAMBIO: top-[20%] los sube un poco más
+          className="lg:hidden absolute right-5 top-[20%] -translate-y-1/2 z-20 bg-[#121319]/90 border border-slate-700/80 text-[#88BDF2] w-10 h-10 flex items-center justify-center rounded-full shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-md active:scale-95 transition-transform animate-pulse"
+        >
+          <ChevronRight size={24} />
+        </button>
+      )}
+      {/* 🚀 FIN CONTROLES */}
+
+      <div 
+        ref={scrollRef}
+        onScroll={checkScroll}
+        className="flex lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-8 overflow-x-auto lg:overflow-visible snap-x snap-mandatory lg:snap-none -mx-4 px-4 lg:mx-0 lg:px-0 scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {autos.map((a) => {
           let caracteristicas = { puntaje_confort: 5, puntaje_seguridad: 5, puntaje_ficha: 5, iconos: {} };
           
           if (a.features) {
             try {
-              // Si el backend lo transformó en String JSON
               const datosParseados = typeof a.features === 'string' ? JSON.parse(a.features) : a.features;
-              
-              // Si vino envuelto en un Array debido a 'normalizarFeaturesSalida' del backend, extraemos el primer índice
               if (Array.isArray(datosParseados)) {
                 caracteristicas = datosParseados[0] || caracteristicas;
               } else {
@@ -111,7 +144,6 @@ export default function CarGrid() {
             }
           }
 
-          // Filtramos de forma segura asegurando que el objeto iconos exista
           const objetoIconos = caracteristicas.iconos || {};
           const listaIconosClasificados = Object.keys(objetoIconos).filter(
             key => objetoIconos[key] === true || objetoIconos[key] === 'true'
@@ -147,7 +179,7 @@ export default function CarGrid() {
                     {a.descripcion_larga || 'Vehículo equipado con altos estándares operacionales y de seguridad.'}
                   </p>
 
-                  {/* 🏷️ DESPLIEGUE DE LOS ÍCONOS DE EQUIPAMIENTO ACTIVO (PROTAGONISTAS) */}
+                  {/* 🏷️ DESPLIEGUE DE LOS ÍCONOS */}
                   {listaIconosClasificados.length > 0 ? (
                     <div className="mt-2">
                       <span className="text-[9px] uppercase font-black text-[#6F7D93] tracking-widest block mb-2.5">Equipamiento Destacado</span>
@@ -175,11 +207,6 @@ export default function CarGrid() {
                   )}
                 </div>
 
-                {/* Footer: SIN precio en la tarjeta.
-                    El cliente eligió que el precio NO se muestre acá (evitaba el
-                    "huevo o la gallina": la tarifa depende del mes que el cliente
-                    pida en la cotización). Acá solo se elige el auto; el precio
-                    real lo calcula el BookingForm según el mes solicitado. */}
                 <div className="pt-3 lg:pt-4 border-t border-slate-800/40">
                    <button 
                       onClick={() => handleReservarAuto(a.id)}

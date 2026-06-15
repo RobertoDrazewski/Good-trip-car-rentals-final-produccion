@@ -1,13 +1,18 @@
 // client/src/Requirements.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import { ClipboardList, Loader2 } from 'lucide-react';
+import { ClipboardList, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function Requirements() {
   const [reqs, setReqs] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Estados y Ref para el control del carrusel móvil
+  const scrollRef = useRef(null);
+  const [mostrarIzq, setMostrarIzq] = useState(false);
+  const [mostrarDer, setMostrarDer] = useState(true);
 
   useEffect(() => {
     const fetchRequisitos = async () => {
@@ -23,6 +28,30 @@ export default function Requirements() {
     };
     fetchRequisitos();
   }, []);
+
+  // Chequea la posición del scroll para ocultar o mostrar las flechas
+  const checkScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+    setMostrarIzq(scrollLeft > 0);
+    setMostrarDer(Math.ceil(scrollLeft + clientWidth) < scrollWidth - 2);
+  };
+
+  // Actualiza las flechas cuando cambian los requisitos
+  useEffect(() => {
+    checkScroll();
+    setTimeout(checkScroll, 100);
+  }, [reqs]);
+
+  const moverCarrusel = (direccion) => {
+    if (scrollRef.current) {
+      const salto = window.innerWidth * 0.85; 
+      scrollRef.current.scrollBy({
+        left: direccion === 'izq' ? -salto : salto,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   // Estado de carga elegante adaptado a la estética del ecosistema
   if (loading) {
@@ -60,35 +89,63 @@ export default function Requirements() {
         </p>
       </div>
 
-      {/* Contenedor Principal: 
-        - En móvil: flex horizontal (carrusel deslizable)
-        - En PC (lg): grid de 2 columnas estáticas
-      */}
-      <div className="flex lg:grid lg:grid-cols-2 gap-4 md:gap-5 w-full overflow-x-auto lg:overflow-visible snap-x snap-mandatory lg:snap-none scroll-smooth pb-4 lg:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* Contenedor relativo para posicionar las flechas correctamente */}
+      <div className="relative w-full">
         
-        {reqs.map((item) => (
-          <div 
-            key={item.id} 
-            // La tarjeta tiene un ancho fijo en móvil para obligar al scroll, y retoma el 100% en PC
-            className="w-[85vw] max-w-[320px] lg:w-full lg:max-w-none shrink-0 snap-center p-5 rounded-2xl bg-[#121319] border border-slate-800/80 shadow-md flex items-start gap-4 hover:border-[#88BDF2]/40 transition-all duration-300 min-w-0"
+        {/* 🚀 CONTROLES FLOTANTES MÓVILES (Posicionados abajo) */}
+        {mostrarIzq && (
+          <button 
+            onClick={() => moverCarrusel('izq')}
+            className="lg:hidden absolute -left-2 bottom-6 z-20 bg-[#121319]/90 border border-slate-700/80 text-[#88BDF2] w-10 h-10 flex items-center justify-center rounded-full shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-md active:scale-95 transition-transform"
           >
-            {/* Contenedor del ícono robusto y alineado arriba */}
-            <div className="p-3 bg-[#1E222F] rounded-xl text-[#88BDF2] border border-slate-800 flex-shrink-0 text-xl w-12 h-12 flex items-center justify-center shadow-inner">
-              {item.icono || '📌'}
-            </div>
-            
-            {/* Bloque de textos con fuentes al doble de tamaño y adaptabilidad total */}
-            <div className="min-w-0 flex-1 space-y-1.5">
-              <h3 className="text-sm md:text-base font-black uppercase tracking-wide text-white break-words whitespace-normal">
-                {item.titulo}
-              </h3>
-              <p className="text-xs md:text-sm text-slate-300 font-medium leading-relaxed break-words whitespace-normal">
-                {item.descripcion}
-              </p>
-            </div>
-          </div>
-        ))}
+            <ChevronLeft size={24} />
+          </button>
+        )}
 
+        {mostrarDer && reqs.length > 1 && (
+          <button 
+            onClick={() => moverCarrusel('der')}
+            className="lg:hidden absolute -right-2 bottom-6 z-20 bg-[#121319]/90 border border-slate-700/80 text-[#88BDF2] w-10 h-10 flex items-center justify-center rounded-full shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-md active:scale-95 transition-transform animate-pulse"
+          >
+            <ChevronRight size={24} />
+          </button>
+        )}
+        {/* 🚀 FIN CONTROLES */}
+
+        {/* Contenedor Principal: 
+          - En móvil: flex horizontal (carrusel deslizable)
+          - En PC (lg): grid de 2 columnas estáticas
+        */}
+        <div 
+          ref={scrollRef}
+          onScroll={checkScroll}
+          className="flex lg:grid lg:grid-cols-2 gap-4 md:gap-5 w-full overflow-x-auto lg:overflow-visible snap-x snap-mandatory lg:snap-none scroll-smooth pb-4 lg:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          
+          {reqs.map((item) => (
+            <div 
+              key={item.id} 
+              // La tarjeta tiene un ancho fijo en móvil para obligar al scroll, y retoma el 100% en PC
+              className="w-[85vw] max-w-[320px] lg:w-full lg:max-w-none shrink-0 snap-center p-5 rounded-2xl bg-[#121319] border border-slate-800/80 shadow-md flex items-start gap-4 hover:border-[#88BDF2]/40 transition-all duration-300 min-w-0"
+            >
+              {/* Contenedor del ícono robusto y alineado arriba */}
+              <div className="p-3 bg-[#1E222F] rounded-xl text-[#88BDF2] border border-slate-800 flex-shrink-0 text-xl w-12 h-12 flex items-center justify-center shadow-inner">
+                {item.icono || '📌'}
+              </div>
+              
+              {/* Bloque de textos con fuentes al doble de tamaño y adaptabilidad total */}
+              <div className="min-w-0 flex-1 space-y-1.5 pb-2"> {/* Agregado pb-2 para dar margen interno si se necesita */}
+                <h3 className="text-sm md:text-base font-black uppercase tracking-wide text-white break-words whitespace-normal">
+                  {item.titulo}
+                </h3>
+                <p className="text-xs md:text-sm text-slate-300 font-medium leading-relaxed break-words whitespace-normal">
+                  {item.descripcion}
+                </p>
+              </div>
+            </div>
+          ))}
+
+        </div>
       </div>
     </div>
   );

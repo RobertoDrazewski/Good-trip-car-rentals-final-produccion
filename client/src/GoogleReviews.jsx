@@ -1,6 +1,6 @@
 // client/src/GoogleReviews.jsx
-import React from 'react';
-import { Star, Quote, ExternalLink } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Star, Quote, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import logoBlanco from './assets/logo.webp';
 
 export default function GoogleReviews() {
@@ -28,9 +28,36 @@ export default function GoogleReviews() {
     }
   ];
 
+  // Estados y Ref para el control del carrusel móvil
+  const scrollRef = useRef(null);
+  const [mostrarIzq, setMostrarIzq] = useState(false);
+  const [mostrarDer, setMostrarDer] = useState(true);
+
+  // Chequea la posición del scroll para ocultar o mostrar las flechas
+  const checkScroll = () => {
+    if (!scrollRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+    setMostrarIzq(scrollLeft > 0);
+    setMostrarDer(Math.ceil(scrollLeft + clientWidth) < scrollWidth - 2);
+  };
+
+  useEffect(() => {
+    checkScroll();
+    // Pequeño retardo inicial por si las fuentes o imágenes tardan en renderizar
+    setTimeout(checkScroll, 100);
+  }, []);
+
+  const moverCarrusel = (direccion) => {
+    if (scrollRef.current) {
+      const salto = window.innerWidth * 0.85; 
+      scrollRef.current.scrollBy({
+        left: direccion === 'izq' ? -salto : salto,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   return (
-    // Clonado exacto del contenedor raíz de BookingForm para simetría total
-    // Se ajustó ligeramente el padding a p-6 md:p-8 y overflow-hidden para asegurar un scroll limpio en móviles
     <div className="w-full bg-[#1E222F] border border-slate-800 rounded-[2rem] p-6 md:p-8 shadow-2xl font-sans text-white overflow-hidden">
       
       {/* Cabecera de Reseñas */}
@@ -65,32 +92,62 @@ export default function GoogleReviews() {
         </div>
       </div>
 
-      {/* Grid de Tarjetas de Reseñas adaptado a Carrusel móvil / Columna en PC */}
-      <div className="flex lg:flex-col gap-4 w-full overflow-x-auto lg:overflow-visible snap-x snap-mandatory lg:snap-none scroll-smooth pb-4 lg:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {reviews.map((review) => (
-          <div 
-            key={review.id} 
-            className="w-[85vw] max-w-[320px] lg:w-full lg:max-w-none shrink-0 snap-center bg-[#121319] p-5 rounded-2xl border border-slate-800/80 flex flex-col justify-between relative group hover:border-[#88BDF2]/40 transition-all duration-300 shadow-md"
+      {/* Contenedor relativo para posicionar las flechas centradas con las tarjetas */}
+      <div className="relative w-full">
+        
+        {/* 🚀 CONTROLES FLOTANTES MÓVILES (Reposicionados abajo) */}
+        {mostrarIzq && (
+          <button 
+            onClick={() => moverCarrusel('izq')}
+            // ✅ CAMBIO: bottom-6 para alinear con el nombre del autor y despejar el texto
+            className="lg:hidden absolute -left-2 bottom-6 z-20 bg-[#121319]/90 border border-slate-700/80 text-[#88BDF2] w-10 h-10 flex items-center justify-center rounded-full shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-md active:scale-95 transition-transform"
           >
-            <Quote className="absolute top-4 right-4 text-slate-800/40 group-hover:text-[#88BDF2]/10 transition-colors" size={28} />
-            
-            <div className="relative z-10">
-              <div className="flex items-center gap-0.5 text-amber-400 mb-2.5">
-                {[...Array(review.rating)].map((_, i) => (
-                  <Star key={i} size={12} fill="currentColor" />
-                ))}
-              </div>
-              <p className="text-slate-300 text-xs leading-relaxed italic pr-6">
-                "{review.text}"
-              </p>
-            </div>
+            <ChevronLeft size={24} />
+          </button>
+        )}
 
-            <div className="mt-4 pt-3 border-t border-slate-800/60 flex justify-between items-center text-[9px] uppercase tracking-wider font-bold">
-              <span className="text-white">{review.author}</span>
-              <span className="text-[#666D7E] font-mono">{review.date}</span>
+        {mostrarDer && reviews.length > 1 && (
+          <button 
+            onClick={() => moverCarrusel('der')}
+            // ✅ CAMBIO: bottom-6 para alinear con el nombre del autor y despejar el texto
+            className="lg:hidden absolute -right-2 bottom-6 z-20 bg-[#121319]/90 border border-slate-700/80 text-[#88BDF2] w-10 h-10 flex items-center justify-center rounded-full shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-md active:scale-95 transition-transform animate-pulse"
+          >
+            <ChevronRight size={24} />
+          </button>
+        )}
+        {/* 🚀 FIN CONTROLES */}
+
+        {/* Grid de Tarjetas de Reseñas adaptado a Carrusel móvil / Columna en PC */}
+        <div 
+          ref={scrollRef}
+          onScroll={checkScroll}
+          className="flex lg:flex-col gap-4 w-full overflow-x-auto lg:overflow-visible snap-x snap-mandatory lg:snap-none scroll-smooth pb-4 lg:pb-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {reviews.map((review) => (
+            <div 
+              key={review.id} 
+              className="w-[85vw] max-w-[320px] lg:w-full lg:max-w-none shrink-0 snap-center bg-[#121319] p-5 rounded-2xl border border-slate-800/80 flex flex-col justify-between relative group hover:border-[#88BDF2]/40 transition-all duration-300 shadow-md"
+            >
+              <Quote className="absolute top-4 right-4 text-slate-800/40 group-hover:text-[#88BDF2]/10 transition-colors" size={28} />
+              
+              <div className="relative z-10">
+                <div className="flex items-center gap-0.5 text-amber-400 mb-2.5">
+                  {[...Array(review.rating)].map((_, i) => (
+                    <Star key={i} size={12} fill="currentColor" />
+                  ))}
+                </div>
+                <p className="text-slate-300 text-xs leading-relaxed italic pr-6">
+                  "{review.text}"
+                </p>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-slate-800/60 flex justify-between items-center text-[9px] uppercase tracking-wider font-bold">
+                <span className="text-white">{review.author}</span>
+                <span className="text-[#666D7E] font-mono">{review.date}</span>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Botones CTA */}
