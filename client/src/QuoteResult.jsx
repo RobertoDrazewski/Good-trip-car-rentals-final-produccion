@@ -6,6 +6,7 @@ import {
   BadgeDollarSign, MessageCircle, Printer, AlertTriangle
 } from 'lucide-react';
 import { trackLead, trackContact } from './analytics';
+import LOGO_TICKET from './logoTicket'; // logo embebido (base64) → siempre imprime, sin depender de red
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -42,42 +43,151 @@ export default function QuoteResult({ quote, onClose }) {
 
   const recargo = montoTotal - (rentaBase + costoRetiro + costoDevol + costoSillita + costoLavado);
 
-  // ── Imprimir ─────────────────────────────────────────────────────
+  // ── Imprimir presupuesto (mismo diseño profesional que el ticket de reserva) ──
   const imprimir = () => {
-    const w = window.open('','_blank','width=700,height=900');
-    w.document.write(`<html><head><title>Good Trip Presupuesto #${nro}</title>
-    <style>
-      body{font-family:monospace;padding:32px;max-width:600px;margin:auto}
-      h1{text-align:center;margin-bottom:4px}
-      .sub{text-align:center;color:#555;font-size:12px;margin-bottom:24px}
-      .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #ccc;font-size:13px}
-      .total{font-size:20px;font-weight:bold;display:flex;justify-content:space-between;margin-top:16px;padding-top:12px;border-top:2px solid #000}
-      .badge{background:#000;color:#fff;display:inline-block;padding:3px 10px;font-size:11px;margin-bottom:12px;letter-spacing:1px}
-      .footer{margin-top:32px;font-size:10px;color:#888;text-align:center}
-    </style></head><body>
-    <h1>🚗 GOOD TRIP CARS</h1>
-    <div class="sub">Mendoza, Argentina · Goodtripmendoza@gmail.com</div>
-    <div class="badge">PRESUPUESTO Nº ${nro}</div>
-    <div class="row"><span>Cliente</span><span>${quote.cliente_nombre||'-'}</span></div>
-    <div class="row"><span>WhatsApp</span><span>${quote.cliente_whatsapp||'-'}</span></div>
-    <div class="row"><span>Vehículo</span><span>${quote.auto_modelo||'Auto'}${quote.auto_patente?' · '+quote.auto_patente:''}</span></div>
-    <div class="row"><span>Origen</span><span>${quote.origen||'Argentina'}${quote.provincia?' · '+quote.provincia:''}</span></div>
-    <div class="row"><span>Retiro</span><span>${quote.desde} ${quote.hora_inicio}hs · ${quote.entrega}</span></div>
-    <div class="row"><span>Devolución</span><span>${quote.hasta} ${quote.hora_fin}hs · ${quote.devolucion}</span></div>
-    <div class="row"><span>Días</span><span>${diasTexto}</span></div>
-    <div class="row"><span>Renta (${diasTexto}d × $${Math.round(precioDia).toLocaleString('es-AR')})</span><span>$${Math.round(rentaBase).toLocaleString('es-AR')}</span></div>
-    ${costoRetiro>0?`<div class="row"><span>Retiro Aeropuerto</span><span>$${Math.round(costoRetiro).toLocaleString('es-AR')}</span></div>`:''}
-    ${costoDevol>0?`<div class="row"><span>Devolución Aeropuerto</span><span>$${Math.round(costoDevol).toLocaleString('es-AR')}</span></div>`:''}
-    ${costoSillita>0?`<div class="row"><span>Sillita Bebé</span><span>$${Math.round(costoSillita).toLocaleString('es-AR')}</span></div>`:''}
-    <div class="row"><span>Lavado</span><span>$${Math.round(costoLavado).toLocaleString('es-AR')}</span></div>
-    ${descPromo>0?`<div class="row"><span>Descuento ${promoTitulo||''} −${descPromo}%</span><span>−$${Math.round(descPromoArs).toLocaleString('es-AR')}</span></div>`:''}
-    <div class="row"><span>Método de pago</span><span>${factorTexto}</span></div>
-    <div class="total"><span>TOTAL ESTIMADO</span><span>ARS $${Math.round(montoTotal).toLocaleString('es-AR')}</span></div>
-    <div class="row" style="margin-top:16px"><span>Garantía</span><span>USD ${garantiaUsd}</span></div>
-    <div style="font-size:10px;color:#666;margin-top:2px">o su equivalente en pesos argentinos, al tipo de cambio vendedor del BNA al momento de la entrega del auto.</div>
-    <div class="footer">Cotización estimada, no contractual. Buenos vientos 🌬️</div>
-    <script>window.print();</script>
-    </body></html>`);
+    const money = (v) => '$' + Math.round(Number(v) || 0).toLocaleString('es-AR');
+    const svg = (inner) => `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+    const IC = {
+      user:    '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+      phone:   '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>',
+      car:     '<path d="M5 17H3v-4l2-5h12l2 5v4h-2"/><path d="M5 11h14"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/>',
+      pin:     '<path d="M21 10c0 6-9 13-9 13s-9-7-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
+      globe:   '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/>',
+      planeUp: '<path d="M2 22h20"/><path d="m5 18 14-5.5a2 2 0 0 0-1.4-3.7L13 10 8 3 6 3.7l3 6.3-4 1.2-2-1.6L1.5 11z"/>',
+      planeDn: '<path d="M2 22h20"/><path d="M17.8 19.8 22 18a2 2 0 0 0 0-3.8L7 9 6 3 4 3.7 5 11l-3.5 1.3L0 11l-.8.7 3 4z"/>',
+      cal:     '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+      card:    '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+      baby:    '<circle cx="12" cy="6" r="3"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/>',
+      drop:    '<path d="M12 2.7S6 9 6 14a6 6 0 0 0 12 0c0-5-6-11.3-6-11.3z"/>',
+      shield:  '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+      dollar:  '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+      tag:     '<path d="M20.6 13.4 12 22l-9-9V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.3"/>',
+      tag2:    '<path d="M9 5H4v5l9 9 5-5-9-9z"/><circle cx="6.5" cy="7.5" r="1"/>',
+    };
+
+    const internac = (quote.origen && quote.origen !== 'Argentina');
+    const esTarjeta = String(quote.metodo_pago || '').includes('tarjeta');
+    const planTxt = { tarjeta_1: '1 pago', tarjeta_3: '3 cuotas', tarjeta_6: '6 cuotas' }[quote.metodo_pago] || '';
+
+    // Recargo de financiación = total − (ítems − descuento). Cuadra exacto al total.
+    const itemsGross  = rentaBase + costoRetiro + costoDevol + costoSillita + costoLavado;
+    const recargoFin  = Math.round(montoTotal - (itemsGross - descPromoArs));
+
+    const fila = (ic, label, valor, cls = '') =>
+      `<div class="brk ${cls}"><span class="bl">${svg(ic)}<span>${label}</span></span><span class="bv">${cls === 'neg' ? '− ' : ''}${money(valor)}</span></div>`;
+
+    let desgloseHtml =
+      fila(IC.car, `Renta · ${diasTexto} día${dias === 1 ? '' : 's'} × ${money(precioDia)}`, rentaBase) +
+      (costoRetiro  > 0 ? fila(IC.planeUp, 'Retiro en aeropuerto', costoRetiro) : '') +
+      (costoDevol   > 0 ? fila(IC.planeDn, 'Devolución en aeropuerto', costoDevol) : '') +
+      (costoSillita > 0 ? fila(IC.baby, 'Sillita de bebé', costoSillita) : '') +
+      (costoLavado  > 0 ? fila(IC.drop, 'Lavado e higiene', costoLavado) : '') +
+      (descPromo    > 0 ? fila(IC.tag2, `Descuento${promoTitulo ? ' · ' + promoTitulo : ''} (−${descPromo}%)`, descPromoArs, 'neg') : '') +
+      (esTarjeta && recargoFin >= 1 ? fila(IC.card, `Recargo financiación${planTxt ? ' · ' + planTxt : ''}`, recargoFin) : '');
+
+    const grStar = '<svg viewBox="0 0 24 24" width="13" height="13" fill="#F59E0B"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>';
+    const grGoogle = '<svg viewBox="0 0 24 24" width="14" height="14"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>';
+    const reviewsHtml = `<div class="gr">${grGoogle}<span class="gr-stars">${grStar.repeat(5)}</span><span class="gr-num">5,0</span><span class="gr-lbl">Calificación en Google Reviews</span></div>`;
+
+    const w = window.open('', '_blank', 'width=760,height=1000');
+    w.document.write(`
+      <html><head><title>Good Trip · Presupuesto #${nro}</title>
+      <meta charset="utf-8"/>
+      <style>
+        :root{ --azul:#2563EB; --tinta:#0F172A; --gris:#64748B; --linea:#E2E8F0; }
+        *{ box-sizing:border-box; }
+        body{ font-family:'Segoe UI',Arial,Helvetica,sans-serif; background:#fff; color:var(--tinta); margin:0; padding:24px; }
+        .hoja{ max-width:680px; margin:auto; }
+        .head{ display:flex; align-items:center; gap:14px; border-bottom:2px solid var(--tinta); padding-bottom:12px; }
+        .logo{ height:48px; width:auto; max-width:120px; object-fit:contain; }
+        .head h1{ font-size:20px; margin:0; letter-spacing:.5px; }
+        .head .sub{ font-size:11px; color:var(--gris); margin-top:2px; }
+        .nro{ margin-left:auto; text-align:right; }
+        .nro .lab{ font-size:9px; letter-spacing:2px; color:var(--gris); text-transform:uppercase; }
+        .nro .num{ font-size:22px; font-weight:800; color:var(--azul); }
+        .grid{ display:grid; grid-template-columns:1fr 1fr; gap:6px 22px; margin:16px 0; }
+        .it{ display:flex; align-items:center; gap:10px; padding:5px 0; border-bottom:1px solid var(--linea); font-size:12px; }
+        .it .k{ display:flex; align-items:center; gap:7px; color:var(--gris); width:96px; flex-shrink:0; }
+        .it .v{ font-weight:600; }
+        .it.full{ grid-column:1 / -1; }
+        .sec-tit{ font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; color:var(--gris); margin:18px 0 8px; display:flex; align-items:center; gap:7px; }
+        .brk{ display:flex; align-items:center; justify-content:space-between; padding:7px 2px; border-bottom:1px dashed var(--linea); font-size:13px; }
+        .brk .bl{ display:flex; align-items:center; gap:8px; color:#334155; }
+        .brk .bv{ font-weight:600; font-variant-numeric:tabular-nums; }
+        .brk.neg .bv,.brk.neg .bl{ color:#16A34A; }
+        .total{ display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding:12px 14px; background:var(--tinta); color:#fff; border-radius:10px; }
+        .total .tl{ display:flex; flex-direction:column; gap:2px; }
+        .total .tl .a{ display:flex; align-items:center; gap:8px; font-size:11px; letter-spacing:2px; text-transform:uppercase; }
+        .total .tl .b{ font-size:9px; color:#94A3B8; letter-spacing:1px; text-transform:uppercase; }
+        .total .tv{ font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; }
+        .gar{ margin-top:12px; border:1px solid var(--linea); border-left:4px solid var(--azul); border-radius:8px; padding:11px 14px; background:#F8FAFC; }
+        .gar .gt{ display:flex; align-items:center; justify-content:space-between; font-size:13px; font-weight:700; }
+        .gar .gt .gl{ display:flex; align-items:center; gap:8px; color:var(--tinta); }
+        .gar .gv{ color:var(--azul); }
+        .gar .gd{ font-size:10px; color:var(--gris); margin-top:4px; line-height:1.4; }
+        .gar .gd strong{ color:#334155; }
+        .gr{ display:flex; align-items:center; justify-content:center; gap:0; margin:14px 0 2px; padding:8px 12px; border:1px solid var(--linea); border-radius:10px; background:#F8FAFC; }
+        .gr-stars{ display:inline-flex; gap:1px; margin:0 8px 0 6px; }
+        .gr-num{ font-weight:800; font-size:13px; color:var(--tinta); }
+        .gr-lbl{ font-size:10px; color:var(--gris); text-transform:uppercase; letter-spacing:1px; font-weight:700; margin-left:9px; }
+        .footer{ margin-top:18px; font-size:10px; color:var(--gris); text-align:center; }
+        .toolbar{ display:flex; gap:12px; justify-content:center; margin-bottom:20px; }
+        .toolbar button{ font-size:13px; font-weight:700; padding:10px 18px; border-radius:10px; border:none; cursor:pointer; }
+        .btn-print{ background:var(--azul); color:#fff; }
+        .btn-close{ background:#eef2f7; color:#334155; }
+        @page{ size:A4; margin:12mm; }
+        @media print{ .no-print{ display:none !important; } body{ padding:0; } .total,.gar,.gr{ -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+      </style></head><body>
+      <div class="hoja">
+        <div class="toolbar no-print">
+          <button class="btn-print" onclick="window.print()">⬇ Descargar / Imprimir PDF</button>
+          <button class="btn-close" onclick="window.close()">✕ Cerrar</button>
+        </div>
+
+        <div class="head">
+          <img class="logo" src="${LOGO_TICKET}" alt="Good Trip Cars"/>
+          <div>
+            <h1>GOOD TRIP CARS</h1>
+            <div class="sub">Mendoza, Argentina · goodtripmendoza@gmail.com</div>
+          </div>
+          <div class="nro"><div class="lab">Presupuesto Nº</div><div class="num">${nro}</div></div>
+        </div>
+
+        ${reviewsHtml}
+
+        <div class="grid">
+          <div class="it"><span class="k">${svg(IC.user)} Cliente</span><span class="v">${quote.cliente_nombre || '-'}</span></div>
+          <div class="it"><span class="k">${svg(IC.phone)} WhatsApp</span><span class="v">${quote.cliente_whatsapp || '-'}</span></div>
+          <div class="it full"><span class="k">${svg(IC.car)} Vehículo</span><span class="v">${quote.auto_modelo || 'Auto'}${quote.auto_patente ? ' · ' + quote.auto_patente : ''}</span></div>
+          <div class="it"><span class="k">${svg(internac ? IC.globe : IC.pin)} Origen</span><span class="v">${quote.origen || 'Argentina'}${quote.provincia ? ' · ' + quote.provincia : ''}</span></div>
+          <div class="it"><span class="k">${svg(IC.cal)} Días</span><span class="v">${diasTexto}</span></div>
+          <div class="it full"><span class="k">${svg(IC.planeUp)} Retiro</span><span class="v">${quote.desde} ${quote.hora_inicio || ''} · ${quote.entrega}</span></div>
+          <div class="it full"><span class="k">${svg(IC.planeDn)} Devolución</span><span class="v">${quote.hasta} ${quote.hora_fin || ''} · ${quote.devolucion}</span></div>
+          <div class="it"><span class="k">${svg(IC.card)} Pago</span><span class="v">${factorTexto}</span></div>
+        </div>
+
+        <div class="sec-tit">${svg(IC.dollar)} Detalle de la cotización</div>
+        ${desgloseHtml}
+
+        <div class="total">
+          <span class="tl"><span class="a">${svg(IC.dollar)} Total estimado</span><span class="b">${factorTexto}</span></span>
+          <span class="tv">ARS ${Math.round(montoTotal).toLocaleString('es-AR')}</span>
+        </div>
+
+        <div class="gar">
+          <div class="gt">
+            <span class="gl">${svg(IC.shield)} Garantía / Franquicia</span>
+            <span class="gv">USD ${garantiaUsd}${garantiaArs ? ' · ARS $' + Math.round(garantiaArs).toLocaleString('es-AR') : ''}</span>
+          </div>
+          <div class="gd">
+            <strong>No forma parte del total de la reserva.</strong> Se entrega en efectivo, transferencia o dólares al
+            tipo de cambio vendedor del BNA al momento de la entrega del auto, y se reintegra al devolver el vehículo en igual condición.
+          </div>
+        </div>
+
+        <div class="footer">Cotización estimada, no contractual. Buenos vientos 🌬️ — Good Trip Mendoza</div>
+      </div>
+      </body></html>`);
     w.document.close();
   };
 
