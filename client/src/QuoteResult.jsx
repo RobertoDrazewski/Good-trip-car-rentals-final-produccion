@@ -22,7 +22,13 @@ export default function QuoteResult({ quote, onClose }) {
   const dias        = Math.max(1, parseFloat(quote.dias)||1);
   const diasTexto   = Number.isInteger(dias) ? String(dias) : dias.toFixed(1).replace('.', ',');
   const precioDia   = parseFloat(quote.precio_renta_mes_ars||0);
-  const rentaBase   = precioDia * dias;
+  // Desglose por mes (cada mes con su tarifa). Si no viene, caemos al cálculo simple.
+  const desgloseMeses = Array.isArray(quote.desglose_meses) && quote.desglose_meses.length
+    ? quote.desglose_meses
+    : null;
+  const rentaBase   = desgloseMeses
+    ? desgloseMeses.reduce((s, m) => s + (parseFloat(m.subtotal) || 0), 0)
+    : precioDia * dias;
   const costoRetiro = parseFloat(quote.costo_retiro_aero||0);
   const costoDevol  = parseFloat(quote.costo_devolucion_aero||0);
   const costoSillita= parseFloat(quote.costo_sillita||0);
@@ -76,8 +82,15 @@ export default function QuoteResult({ quote, onClose }) {
     const fila = (ic, label, valor, cls = '') =>
       `<div class="brk ${cls}"><span class="bl">${svg(ic)}<span>${label}</span></span><span class="bv">${cls === 'neg' ? '− ' : ''}${money(valor)}</span></div>`;
 
+    const dTxt = (n) => Number.isInteger(n) ? String(n) : n.toFixed(1).replace('.', ',');
+    const rentaLineas = desgloseMeses
+      ? desgloseMeses.map(m =>
+          fila(IC.car, `Renta · ${dTxt(Number(m.dias))} día${Number(m.dias) === 1 ? '' : 's'} ${m.label} × ${money(m.precio_dia)}`, m.subtotal)
+        ).join('')
+      : fila(IC.car, `Renta · ${diasTexto} día${dias === 1 ? '' : 's'} × ${money(precioDia)}`, rentaBase);
+
     let desgloseHtml =
-      fila(IC.car, `Renta · ${diasTexto} día${dias === 1 ? '' : 's'} × ${money(precioDia)}`, rentaBase) +
+      rentaLineas +
       (costoRetiro  > 0 ? fila(IC.planeUp, 'Retiro en aeropuerto', costoRetiro) : '') +
       (costoDevol   > 0 ? fila(IC.planeDn, 'Devolución en aeropuerto', costoDevol) : '') +
       (costoSillita > 0 ? fila(IC.baby, 'Sillita de bebé', costoSillita) : '') +
@@ -368,10 +381,22 @@ export default function QuoteResult({ quote, onClose }) {
           </h4>
 
           <div className="bg-[#121319]/50 p-5 rounded-xl border border-slate-800 space-y-2.5 font-mono text-xs">
-            <div className="flex justify-between text-slate-400">
-              <span>Renta Base ({diasTexto}d × ${Math.round(precioDia).toLocaleString('es-AR')}):</span>
-              <span className="text-white font-bold">${Math.round(rentaBase).toLocaleString('es-AR')}</span>
-            </div>
+            {desgloseMeses ? (
+              desgloseMeses.map((m, i) => {
+                const dTxt = Number.isInteger(Number(m.dias)) ? String(m.dias) : Number(m.dias).toFixed(1).replace('.', ',');
+                return (
+                  <div key={i} className="flex justify-between text-slate-400">
+                    <span>Renta {m.label} ({dTxt}d × ${Math.round(m.precio_dia).toLocaleString('es-AR')}):</span>
+                    <span className="text-white font-bold">${Math.round(m.subtotal).toLocaleString('es-AR')}</span>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="flex justify-between text-slate-400">
+                <span>Renta Base ({diasTexto}d × ${Math.round(precioDia).toLocaleString('es-AR')}):</span>
+                <span className="text-white font-bold">${Math.round(rentaBase).toLocaleString('es-AR')}</span>
+              </div>
+            )}
             {costoRetiro>0&&(
               <div className="flex justify-between text-slate-400">
                 <span>Retiro Aeropuerto:</span>

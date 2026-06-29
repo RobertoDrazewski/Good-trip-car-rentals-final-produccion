@@ -14,6 +14,38 @@ const ANIOS = Array.from({ length: (ANIO_ACTUAL + 50) - 2024 + 1 }, (_, i) => 20
 
 const num = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
 
+// Reparte los días facturables por mes calendario, asignando cada bloque de 24 h
+// al mes en que COMIENZA. La suma por mes es siempre igual al total facturado.
+const repartirDiasPorMes = (fIni, hIni, fFin, hFin) => {
+  const limpiarFecha = (f) => String(f).split('T')[0].split(' ')[0];
+  const limpiarHora  = (h) => (h ? String(h) : '10:00').slice(0, 5);
+  const ini = new Date(`${limpiarFecha(fIni)}T${limpiarHora(hIni)}:00`);
+  const fin = new Date(`${limpiarFecha(fFin)}T${limpiarHora(hFin)}:00`);
+  const diffH = Math.max(0, Math.round((fin - ini) / 3_600_000 * 2) / 2);
+  const full  = Math.floor(diffH / 24);
+  const resto = diffH - full * 24;
+  let extra = 0;
+  if (resto >= 8)       extra = 1;
+  else if (resto > 3.5) extra = 0.5;
+  const totalDias = Math.max(1, full + extra);
+
+  const segmentos = [];
+  const idx = {};
+  let cursor = new Date(ini);
+  let restante = totalDias;
+  while (restante > 0.0001) {
+    const paso = restante >= 1 ? 1 : restante;
+    const anio = cursor.getFullYear();
+    const mes  = cursor.getMonth() + 1;
+    const key  = `${anio}-${mes}`;
+    if (idx[key] === undefined) { idx[key] = segmentos.length; segmentos.push({ anio, mes, dias: 0 }); }
+    segmentos[idx[key]].dias += paso;
+    cursor = new Date(cursor.getTime() + paso * 24 * 3_600_000);
+    restante = Math.round((restante - paso) * 2) / 2;
+  }
+  return { totalDias, segmentos };
+};
+
 export default function TabVentas({
   reservas = [],
   cambiarEstadoReserva,
@@ -69,17 +101,34 @@ export default function TabVentas({
     const anio = parseInt(String(r.fecha_inicio).slice(0, 4), 10);
     const aid  = parseInt(r.auto_id, 10);
 
-    // Tarifa del mes exacto del auto; si no, cualquiera del auto.
-    const t = precios.find(p => +p.auto_id === aid && +p.mes === mes && +p.anio === anio)
-           || precios.find(p => +p.auto_id === aid)
-           || {};
+    // Resolver tarifa para un mes/año concreto (con fallbacks).
+    const tarifaDe = (m, a) =>
+      precios.find(p => +p.auto_id === aid && +p.mes === m && +p.anio === a)
+      || precios.find(p => +p.auto_id === aid)
+      || {};
+
+    // Tarifa del mes de inicio: cargos NO diarios (sillita, lavado, aeropuerto).
+    const t = tarifaDe(mes, anio);
     const hayTarifa = num(t.precio_auto_mensual_ars) > 0;
 
-    const precioDia = num(t.precio_auto_mensual_ars);
+    // Renta repartida por mes, cada mes con SU tarifa de temporada.
+    const { segmentos } = repartirDiasPorMes(r.fecha_inicio, r.hora_inicio, r.fecha_fin, r.hora_fin);
+    const lineasRenta = segmentos.map(s => {
+      const tm = tarifaDe(s.mes, s.anio);
+      const precioDiaMes = num(tm.precio_auto_mensual_ars);
+      return {
+        label: `${MESES_OPTS[s.mes - 1]} ${s.anio}`,
+        dias: s.dias,
+        precioDia: precioDiaMes,
+        subtotal: Math.round(precioDiaMes * s.dias),
+      };
+    });
+
+    const precioDia = num(t.precio_auto_mensual_ars); // referencia (mes de inicio)
     const enAeroRet = String(r.lugar_retiro || '').toLowerCase().includes('aeropuerto');
     const enAeroDev = String(r.lugar_devolucion || '').toLowerCase().includes('aeropuerto');
 
-    const rentaBase    = Math.round(precioDia * dias);
+    const rentaBase    = lineasRenta.reduce((sum, l) => sum + l.subtotal, 0);
     const costoRetiro  = enAeroRet ? Math.round(num(t.cargo_retiro_aeropuerto)) : 0;
     const costoDevol   = enAeroDev ? Math.round(num(t.cargo_devolucion_aeropuerto)) : 0;
     const costoSillita = (r.sillita ? 1 : 0) * Math.round(num(t.precio_sillita));
@@ -90,7 +139,7 @@ export default function TabVentas({
     // Lo que el total ya incluye y no está en las líneas: recargo de tarjeta (+) o descuento de promo (−).
     const ajuste = total - itemsSubtotal;
 
-    return { dias, precioDia, rentaBase, costoRetiro, costoDevol, costoSillita, costoLavado, total, ajuste, hayTarifa };
+    return { dias, precioDia, lineasRenta, rentaBase, costoRetiro, costoDevol, costoSillita, costoLavado, total, ajuste, hayTarifa };
   };
 
   const reservasFiltradas = useMemo(() => {
@@ -155,8 +204,14 @@ export default function TabVentas({
     // Desglose: si encontramos la tarifa reconstruimos línea por línea; si no, renglón único.
     let desgloseHtml;
     if (d.hayTarifa) {
+      const dTxt = (n) => Number.isInteger(n) ? String(n) : n.toFixed(1).replace('.', ',');
+      const rentaLineas = (d.lineasRenta && d.lineasRenta.length)
+        ? d.lineasRenta.map(l =>
+            fila(IC.car, `Renta · ${dTxt(Number(l.dias))} día${Number(l.dias) === 1 ? '' : 's'} ${l.label} × ${money(l.precioDia)}`, l.subtotal)
+          ).join('')
+        : fila(IC.car, `Renta · ${diasTexto(d.dias)} día${d.dias === 1 ? '' : 's'} × ${money(d.precioDia)}`, d.rentaBase);
       desgloseHtml =
-        fila(IC.car, `Renta · ${diasTexto(d.dias)} día${d.dias === 1 ? '' : 's'} × ${money(d.precioDia)}`, d.rentaBase) +
+        rentaLineas +
         (d.costoRetiro  > 0 ? fila(IC.planeUp, 'Retiro en aeropuerto', d.costoRetiro) : '') +
         (d.costoDevol   > 0 ? fila(IC.planeDn, 'Devolución en aeropuerto', d.costoDevol) : '') +
         (d.costoSillita > 0 ? fila(IC.baby, 'Sillita de bebé', d.costoSillita) : '') +

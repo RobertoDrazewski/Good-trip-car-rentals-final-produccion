@@ -29,6 +29,42 @@ const calcDias = (d1,h1,d2,h2) => {
   else if (resto > 3.5) extra = 0.5;
   return Math.max(1, full + extra);
 };
+
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+// Reparte los días facturables por mes calendario.
+// Cada bloque de 24 h se asigna al mes en el que COMIENZA, así la suma
+// de días por mes es SIEMPRE igual al total facturado (no infla el total).
+const repartirDiasPorMes = (d1, h1, d2, h2) => {
+  const fecha = f => String(f).split('T')[0].split(' ')[0];
+  const hora  = h => (h ? String(h) : '10:00').slice(0, 5);
+  const ini = new Date(`${fecha(d1)}T${hora(h1)}:00`);
+  const fin = new Date(`${fecha(d2)}T${hora(h2)}:00`);
+  const diffH = Math.max(0, Math.round((fin - ini) / 3_600_000 * 2) / 2);
+  const full  = Math.floor(diffH / 24);
+  const resto = diffH - full * 24;
+  let extra = 0;
+  if (resto >= 8)       extra = 1;
+  else if (resto > 3.5) extra = 0.5;
+  const totalDias = Math.max(1, full + extra);
+
+  const segmentos = [];          // [{ anio, mes, dias }]
+  const idx = {};
+  let cursor = new Date(ini);
+  let restante = totalDias;
+  while (restante > 0.0001) {
+    const paso = restante >= 1 ? 1 : restante;   // 1 día completo, o el medio día final
+    const anio = cursor.getFullYear();
+    const mes  = cursor.getMonth() + 1;
+    const key  = `${anio}-${mes}`;
+    if (idx[key] === undefined) { idx[key] = segmentos.length; segmentos.push({ anio, mes, dias: 0 }); }
+    segmentos[idx[key]].dias += paso;
+    cursor = new Date(cursor.getTime() + paso * 24 * 3_600_000);
+    restante = Math.round((restante - paso) * 2) / 2;
+  }
+  return { totalDias, segmentos };
+};
+
 const esMendoza = w => { const t=String(w||'').replace(/\D/g,''); return t.startsWith('261')||t.startsWith('54261'); };
 
 export default function BookingForm({ autos=[], tarifas=[], reservas=[], promos=[], onQuoteGenerated }) {
@@ -97,12 +133,30 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], promos=
       const mes  = parseInt(form.desde.split('-')[1],10);
       const anio = parseInt(form.desde.split('-')[0],10);
 
-      const tarifa =
-        tarifas.find(t=>parseInt(t.auto_id,10)===aid && parseInt(t.mes,10)===mes && parseInt(t.anio,10)===anio) ||
+      // Resolver tarifa para un mes/año concreto (con fallbacks).
+      const tarifaDe = (m, a) =>
+        tarifas.find(t=>parseInt(t.auto_id,10)===aid && parseInt(t.mes,10)===m && parseInt(t.anio,10)===a) ||
         tarifas.find(t=>parseInt(t.auto_id,10)===aid) ||
-        tarifas.find(t=>parseInt(t.mes,10)===mes && parseInt(t.anio,10)===anio) || {};
+        tarifas.find(t=>parseInt(t.mes,10)===m && parseInt(t.anio,10)===a) || {};
 
-      const precioDia    = parseFloat(tarifa.precio_auto_mensual_ars || autoSel?.prices_ars || 45000);
+      // Tarifa del mes de inicio: se usa para los cargos NO diarios (sillita, lavado, aeropuerto, garantía, recargos).
+      const tarifa = tarifaDe(mes, anio);
+
+      // Reparto de días por mes y renta blended (cada mes con SU precio).
+      const { totalDias, segmentos } = repartirDiasPorMes(form.desde, form.hora_inicio, form.hasta, form.hora_fin);
+      const desgloseMeses = segmentos.map(s => {
+        const t = tarifaDe(s.mes, s.anio);
+        const precioDiaMes = parseFloat(t.precio_auto_mensual_ars || autoSel?.prices_ars || 45000);
+        return {
+          mes: s.mes, anio: s.anio,
+          label: `${MESES[s.mes-1]} ${s.anio}`,
+          dias: s.dias,
+          precio_dia: precioDiaMes,
+          subtotal: Math.round(precioDiaMes * s.dias),
+        };
+      });
+
+      const precioDia    = desgloseMeses[0]?.precio_dia || parseFloat(tarifa.precio_auto_mensual_ars || autoSel?.prices_ars || 45000);
       const precSillita  = parseFloat(tarifa.precio_sillita          || 5000);
       const precLavado   = parseFloat(tarifa.precio_lavado           || 18000);
       const cRetiro      = parseFloat(tarifa.cargo_retiro_aeropuerto || 16000);
@@ -111,7 +165,7 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], promos=
       const cotizacion   = parseFloat(tarifa.cotizacion_dolar        || 1450);
       const garantiaArs  = garantiaUsd * cotizacion;
 
-      const rentaBase    = precioDia * dias;
+      const rentaBase    = desgloseMeses.reduce((sum, m) => sum + m.subtotal, 0);
       const costoSillita = form.sillita ? precSillita : 0;
       const costoRetiro  = form.entrega.toLowerCase().includes('aeropuerto')    ? cRetiro : 0;
       const costoDevol   = form.devolucion.toLowerCase().includes('aeropuerto') ? cDevol  : 0;
@@ -150,7 +204,9 @@ export default function BookingForm({ autos=[], tarifas=[], reservas=[], promos=
       onQuoteGenerated({
         enviado:true,
         auto_id:aid, auto_modelo:autoSel?.modelo||'Vehículo', auto_patente:autoSel?.patente||'',
-        dias,
+        dias: totalDias,
+        desglose_meses: desgloseMeses,
+        renta_base_ars: rentaBase,
         precio_renta_mes_ars:precioDia,
         costo_retiro_aero:costoRetiro, costo_devolucion_aero:costoDevol,
         costo_sillita:costoSillita, costo_lavado:costoLavado,
